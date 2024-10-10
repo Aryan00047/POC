@@ -51,7 +51,7 @@ const addProfile = async (req, res) => {
     }
 
     // Find the candidate's existing profile
-    const existingProfile = await Profile.findOne({ candidate_id: Id });
+    const existingProfile = await Profile.findOne({ candidate_id: Id }); // Changed candidateId to candidate_id
 
     // Construct the resume file path from the uploaded file
     let resumePath = req.file ? req.file.path : null;
@@ -74,20 +74,23 @@ const addProfile = async (req, res) => {
       const newResumeName = `${candidate.email}${fileExtension}`; // Rename file to email + extension
       const newResumePath = path.join(path.dirname(resumePath), newResumeName); // Get new file path
 
+      console.log('Old resume path:', resumePath);
+      console.log('New resume path:', newResumePath);
+
       // Rename the file
       fs.rename(resumePath, newResumePath, (err) => {
         if (err) {
-          console.error('Error renaming file:', err);
-          return res.status(500).json({ message: 'Error renaming file' });
+          console.error('Error renaming file:', err); // Detailed error logging
+          return res.status(500).json({ message: 'Error renaming file', error: err.message }); // Return on error
         }
+        console.log('File renamed successfully to:', newResumePath);
+        resumePath = newResumePath; // Update the resume path to the new renamed file
       });
-
-      resumePath = newResumePath; // Update the resume path to the new renamed file
     }
 
     // Update or create the profile
     const profile = await Profile.findOneAndUpdate(
-      { candidate_id: Id },
+      { candidate_id: Id }, // Changed candidateId to candidate_id
       {
         dob,
         marks,
@@ -104,9 +107,9 @@ const addProfile = async (req, res) => {
       { upsert: true, new: true } // Create a new profile if it doesn't exist
     );
 
-    res.status(200).json({ message: 'Profile updated successfully', profile });
+    return res.status(200).json({ message: 'Profile updated successfully', profile }); // Return response after update
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message }); // Return error if caught
   }
 };
 
