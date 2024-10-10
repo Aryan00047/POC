@@ -1,13 +1,14 @@
+const fs = require('fs');
+const path = require('path');
 const Register = require('../models/candidate/register'); // Import Register model
 const Profile = require('../models/candidate/profile'); // Import Profile model
 
 // Register a new candidate
-// Register a new candidate
 const registerCandidate = async (req, res) => {
-  const { name, email, password } = req.body; // Include password
+  const { name, email, password } = req.body;
 
   try {
-    const newCandidate = new Register({ name, email, password }); // Add password to the new candidate object
+    const newCandidate = new Register({ name, email, password });
     const savedCandidate = await newCandidate.save();
 
     res.status(201).json({ message: 'Candidate registered successfully', candidate: savedCandidate });
@@ -16,15 +17,19 @@ const registerCandidate = async (req, res) => {
   }
 };
 
-
 // Login a candidate
 const loginCandidate = async (req, res) => {
-  const { email } = req.body;
+  const { email, password } = req.body;
 
   try {
     const candidate = await Register.findOne({ email });
     if (!candidate) {
       return res.status(404).json({ message: 'Candidate not found' });
+    }
+
+    // Here you can also check the password against the saved hash
+    if (password !== candidate.password) {
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     res.status(200).json({ message: 'Login successful', candidate });
@@ -34,9 +39,6 @@ const loginCandidate = async (req, res) => {
 };
 
 // Add or update candidate profile
-const fs = require('fs'); // Import file system module to handle file operations
-const path = require('path');
-
 const addProfile = async (req, res) => {
   try {
     const { dob, marks, university, skills, company, role, workExperience, working } = req.body;
@@ -52,7 +54,7 @@ const addProfile = async (req, res) => {
     const existingProfile = await Profile.findOne({ candidate_id: Id });
 
     // Construct the resume file path from the uploaded file
-    const resumePath = req.file ? req.file.path : null;
+    let resumePath = req.file ? req.file.path : null;
 
     // If a profile already exists and has a resume, delete the old resume file
     if (existingProfile && existingProfile.resume && resumePath) {
@@ -66,6 +68,23 @@ const addProfile = async (req, res) => {
       });
     }
 
+    // Rename the resume file with the candidate's email
+    if (resumePath && candidate.email) {
+      const fileExtension = path.extname(resumePath); // Get the file extension (e.g., .pdf, .docx)
+      const newResumeName = `${candidate.email}${fileExtension}`; // Rename file to email + extension
+      const newResumePath = path.join(path.dirname(resumePath), newResumeName); // Get new file path
+
+      // Rename the file
+      fs.rename(resumePath, newResumePath, (err) => {
+        if (err) {
+          console.error('Error renaming file:', err);
+          return res.status(500).json({ message: 'Error renaming file' });
+        }
+      });
+
+      resumePath = newResumePath; // Update the resume path to the new renamed file
+    }
+
     // Update or create the profile
     const profile = await Profile.findOneAndUpdate(
       { candidate_id: Id },
@@ -74,7 +93,7 @@ const addProfile = async (req, res) => {
         marks,
         university,
         skills,
-        resume: resumePath, // Add the new resume path
+        resume: resumePath, // Save the renamed resume path
         company,
         role,
         workExperience,
@@ -91,8 +110,7 @@ const addProfile = async (req, res) => {
   }
 };
 
-
-// Get candidate profile
+// Get candidate profile (if needed in the future)
 // const getCandidateProfile = async (req, res) => {
 //   const Id = req.params.id;
 
@@ -112,5 +130,5 @@ module.exports = {
   registerCandidate,
   loginCandidate,
   addProfile,
-  // getCandidateProfile
+  // getCandidateProfile (Uncomment when needed)
 };
