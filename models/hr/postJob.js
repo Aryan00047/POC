@@ -6,6 +6,18 @@ const jobSchema = new mongoose.Schema({
         required: true,
         ref: 'Job' // Change 'HR' to your actual HR model name if different
     },
+    name: {
+        type: String,
+        required: true,
+        // immutable: true, // Make it immutable in Mongoose
+      },
+      email: {
+        type: String,
+        required: true,
+        lowercase: true,
+        trim: true,
+        // immutable: true, // Make it immutable in Mongoose
+      },
     company:{
         type: String,
         required: true

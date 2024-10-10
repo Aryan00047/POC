@@ -52,6 +52,13 @@ const postJob = async (req, res) => {
     const hrId = req.params.id; // Get HR ID from URL params
   
     try {
+      // Fetch the HR details from the database
+      const hr = await HR.findById(hrId); // Assuming HR model is imported
+  
+      if (!hr) {
+        return res.status(404).json({ message: 'HR not found' });
+      }
+  
       const newJob = new Job({
         company,
         role,
@@ -59,6 +66,8 @@ const postJob = async (req, res) => {
         experienceRequired,
         package,
         hrId, // Associate the job with the HR ID
+        name: hr.name,  // Adding HR name
+        email: hr.email  // Adding HR email
       });
   
       const savedJob = await newJob.save();
@@ -67,6 +76,7 @@ const postJob = async (req, res) => {
       res.status(500).json({ message: 'Server error', error: error.message });
     }
   };
+  
   
 
 // Export the functions
