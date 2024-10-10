@@ -1,6 +1,11 @@
 const mongoose = require("mongoose")
 
 const jobSchema = new mongoose.Schema({
+    hrId: {
+        type: mongoose.Schema.Types.ObjectId, // Reference to the HR model
+        required: true,
+        ref: 'Job' // Change 'HR' to your actual HR model name if different
+    },
     company:{
         type: String,
         required: true
@@ -9,11 +14,11 @@ const jobSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    jobtype:{
+    jobDescription:{
         type: String,
         required: true
     },
-    experience:{
+    experienceRequired:{
         type: String,
         required: true
     },

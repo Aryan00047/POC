@@ -1,5 +1,6 @@
 // controllers/hrController.js
-const HR = require('../models/hr/register'); // Ensure this is the correct model
+const HR = require('../models/hr/register'); 
+const Job = require('../models/hr/postJob');
 const bcrypt = require('bcrypt');
 
 // HR registration handler
@@ -45,8 +46,32 @@ const loginHR = async (req, res) => {
   }
 };
 
+// Job posting handler
+const postJob = async (req, res) => {
+    const { company, role, jobDescription, experienceRequired, package } = req.body;
+    const hrId = req.params.id; // Get HR ID from URL params
+  
+    try {
+      const newJob = new Job({
+        company,
+        role,
+        jobDescription,
+        experienceRequired,
+        package,
+        hrId, // Associate the job with the HR ID
+      });
+  
+      const savedJob = await newJob.save();
+      res.status(201).json({ message: 'Job posted successfully', job: savedJob });
+    } catch (error) {
+      res.status(500).json({ message: 'Server error', error: error.message });
+    }
+  };
+  
+
 // Export the functions
 module.exports = {
   registerHR,
   loginHR,
+  postJob
 };
