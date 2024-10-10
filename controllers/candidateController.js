@@ -2,22 +2,31 @@ const fs = require('fs');
 const path = require('path');
 const Register = require('../models/candidate/register'); // Import Register model
 const Profile = require('../models/candidate/profile'); // Import Profile model
+const bcrypt = require('bcrypt');
 
-// Register a new candidate
+// Candidate registration handler
 const registerCandidate = async (req, res) => {
   const { name, email, password } = req.body;
+  console.log("Received password:", password); // Log the received password
 
   try {
-    const newCandidate = new Register({ name, email, password });
+    if (!password) {
+      return res.status(400).json({ message: 'Password is required' });
+    }
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newCandidate = new Register({ name, email, password: hashedPassword });
     const savedCandidate = await newCandidate.save();
 
     res.status(201).json({ message: 'Candidate registered successfully', candidate: savedCandidate });
   } catch (error) {
+    console.error("Error during candidate registration:", error); // Log the full error
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
-// Login a candidate
+// Candidate login handler
 const loginCandidate = async (req, res) => {
   const { email, password } = req.body;
 
@@ -27,13 +36,15 @@ const loginCandidate = async (req, res) => {
       return res.status(404).json({ message: 'Candidate not found' });
     }
 
-    // Here you can also check the password against the saved hash
-    if (password !== candidate.password) {
+    // Compare the hashed password with the provided password
+    const match = await bcrypt.compare(password, candidate.password);
+    if (!match) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     res.status(200).json({ message: 'Login successful', candidate });
   } catch (error) {
+    console.error("Error during candidate login:", error); // Log the full error
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

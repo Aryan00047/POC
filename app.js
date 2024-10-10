@@ -10,6 +10,7 @@ const connectDB = require("./db/connect.js");
 const PORT = process.env.PORT || 5000;
 
 const candidates_routes = require("./routes/candidates");
+const hr_routes = require("./routes/hr");
 
 app.get("/",(req,res)=>{
     res.send("Server Connected")
@@ -17,6 +18,7 @@ app.get("/",(req,res)=>{
 
 //middleware or to set router
 app.use("/api/candidates", candidates_routes); 
+app.use("/api/hr", hr_routes); 
 
 const start = async () => {
     try{
