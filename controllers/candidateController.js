@@ -3,6 +3,8 @@ const path = require('path');
 const Register = require('../models/candidate/register'); // Import Register model
 const Profile = require('../models/candidate/profile'); // Import Profile model
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const authenticateCandidate = require('../middleware/authmiddleware');
 
 // Candidate registration handler
 const registerCandidate = async (req, res) => {
@@ -36,18 +38,20 @@ const loginCandidate = async (req, res) => {
       return res.status(404).json({ message: 'Candidate not found' });
     }
 
-    // Compare the hashed password with the provided password
     const match = await bcrypt.compare(password, candidate.password);
     if (!match) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    res.status(200).json({ message: 'Login successful', candidate });
+    // Generate JWT token
+    const token = jwt.sign({ id: candidate._id, email: candidate.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.status(200).json({ message: 'Login successful', token });
   } catch (error) {
-    console.error("Error during candidate login:", error); // Log the full error
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
 
 // Add or update candidate profile
 const addProfile = async (req, res) => {

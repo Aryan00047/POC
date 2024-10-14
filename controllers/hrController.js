@@ -2,6 +2,8 @@
 const HR = require('../models/hr/register'); 
 const Job = require('../models/hr/postJob');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const authenticateCandidate = require('../middleware/authmiddleware');
 
 // HR registration handler
 const registerHR = async (req, res) => {
@@ -26,25 +28,27 @@ const registerHR = async (req, res) => {
 
 // HR login handler
 const loginHR = async (req, res) => {
-  const { email, password } = req.body;
-
-  try {
-    const hr = await HR.findOne({ email });
-    if (!hr) {
-      return res.status(404).json({ message: 'HR not found' });
+    const { email, password } = req.body;
+  
+    try {
+      const hr = await HR.findOne({ email });
+      if (!hr) {
+        return res.status(404).json({ message: 'HR not found' });
+      }
+  
+      const match = await bcrypt.compare(password, hr.password);
+      if (!match) {
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+  
+      // Generate JWT token
+      const token = jwt.sign({ id: hr._id, email: hr.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  
+      res.status(200).json({ message: 'Login successful', token });
+    } catch (error) {
+      res.status(500).json({ message: 'Server error', error: error.message });
     }
-
-    const match = await bcrypt.compare(password, hr.password);
-    if (!match) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
-    res.status(200).json({ message: 'Login successful', hr });
-  } catch (error) {
-    console.error("Error during HR login:", error); // Log the full error
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
+  };
 
 // Job posting handler
 const postJob = async (req, res) => {

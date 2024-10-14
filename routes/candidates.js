@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
+const authMiddleware = require('../middleware/authmiddleware');
+
 const {
   registerCandidate,
   loginCandidate,
@@ -42,7 +44,9 @@ router.post('/register', registerCandidate);
 router.post('/login', loginCandidate);
 
 // Route for adding/updating candidate profile with file upload
-router.put('/profile/:id', upload.single('resume'), addProfile);
+router.put('/profile/:id',authMiddleware, upload.single('resume'), addProfile);
+
+
 
 // Route for getting candidate profile
 // router.get('/profile/:id', getCandidateProfile);
