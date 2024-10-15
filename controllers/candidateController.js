@@ -4,159 +4,139 @@ const Register = require('../models/candidate/register'); // Import Register mod
 const Profile = require('../models/candidate/profile'); // Import Profile model
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const authenticateCandidate = require('../middleware/authmiddleware');
+const authenticateCandidate = require('../middleware/authmiddleware'); // Auth middleware
 
 // Candidate registration handler
 const registerCandidate = async (req, res) => {
-  const { name, email, password } = req.body;
-  console.log("Received password:", password); // Log the received password
+    const { name, email, password } = req.body;
+    console.log("Received password:", password); // Log the received password
 
-  try {
-    if (!password) {
-      return res.status(400).json({ message: 'Password is required' });
+    try {
+        if (!password) {
+            return res.status(400).json({ message: 'Password is required' });
+        }
+
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const newCandidate = new Register({ name, email, password: hashedPassword });
+        const savedCandidate = await newCandidate.save();
+
+        res.status(201).json({ message: 'Candidate registered successfully', candidate: savedCandidate });
+    } catch (error) {
+        console.error("Error during candidate registration:", error); // Log the full error
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
-
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newCandidate = new Register({ name, email, password: hashedPassword });
-    const savedCandidate = await newCandidate.save();
-
-    res.status(201).json({ message: 'Candidate registered successfully', candidate: savedCandidate });
-  } catch (error) {
-    console.error("Error during candidate registration:", error); // Log the full error
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
 };
 
 // Candidate login handler
 const loginCandidate = async (req, res) => {
-  const { email, password } = req.body;
-  try {
-      const candidate = await Register.findOne({ email });
-      if (!candidate) {
-          return res.status(404).json({ message: 'Candidate not found' });
-      }
-      const match = await bcrypt.compare(password, candidate.password);
-      if (!match) {
-          return res.status(401).json({ message: 'Invalid credentials' });
-      }
+    const { email, password } = req.body;
 
-      // Generate JWT token
-      const token = jwt.sign(
-          { id: candidate._id, email: candidate.email }, 
-          process.env.JWT_SECRET, 
-          { expiresIn: '1h' }
-      );
+    try {
+        const candidate = await Register.findOne({ email });
+        if (!candidate) {
+            return res.status(404).json({ message: 'Candidate not found' });
+        }
 
-      // Log the candidate ID
-      console.log("Logged in candidate ID:", candidate._id);
+        const match = await bcrypt.compare(password, candidate.password);
+        if (!match) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
 
-      // Send response with token and candidate ID
-      res.status(200).json({ 
-          message: 'Login successful', 
-          token, 
-          candidate_id: candidate._id 
-      });
-  } catch (error) {
-      res.status(500).json({ message: 'Server error', error: error.message });
-  }
+        // Generate JWT token
+        const token = jwt.sign({ id: candidate._id, email: candidate.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+        // Return candidate data and token in the response
+        res.status(200).json({ 
+            message: 'Login successful', 
+            token, 
+            candidate: { id: candidate._id, name: candidate.name, email: candidate.email } // Including full candidate data
+        });
+
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
 };
-
 
 // Add or update candidate profile
 const addProfile = async (req, res) => {
   try {
-    const { dob, marks, university, skills, company, role, workExperience, working } = req.body;
-    const Id = req.params.id; // Assuming this is the candidate's ID from the URL
+      const { dob, marks, university, skills, company, role, workExperience, working } = req.body;
+      const Id = req.params.id; // Candidate ID from URL
 
-    // Check if the candidate exists
-    const candidate = await Register.findById(Id);
-    if (!candidate) {
-      return res.status(404).json({ message: 'Candidate not found' });
-    }
+      // Check if the candidate exists
+      const candidate = await Register.findById(Id);
+      if (!candidate) {
+          return res.status(404).json({ message: 'Candidate not found' });
+      }
 
-    // Find the candidate's existing profile
-    const existingProfile = await Profile.findOne({ candidate_id: Id }); // Changed candidateId to candidate_id
+      // Find existing profile or create a new one
+      const existingProfile = await Profile.findOne({ candidate_id: Id });
 
-    // Construct the resume file path from the uploaded file
-    let resumePath = req.file ? req.file.path : null;
+      // Construct the resume file path from the uploaded file
+      let resumePath = req.file ? req.file.path : null;
 
-    // If a profile already exists and has a resume, delete the old resume file
-    if (existingProfile && existingProfile.resume && resumePath) {
-      const oldResumePath = path.resolve(existingProfile.resume); // Convert to absolute path
-      fs.unlink(oldResumePath, (err) => {
-        if (err) {
-          console.error('Error deleting old resume:', err);
-        } else {
-          console.log('Old resume deleted:', oldResumePath);
-        }
-      });
-    }
+      // Delete old resume if it exists
+      if (existingProfile && existingProfile.resume && resumePath) {
+          const oldResumePath = path.resolve(existingProfile.resume); // Absolute path
+          fs.access(oldResumePath, fs.constants.F_OK, (err) => {
+              if (!err) {
+                  // The file exists, so attempt to delete it
+                  fs.unlink(oldResumePath, (err) => {
+                      if (err) {
+                          console.error('Error deleting old resume:', err);
+                      } else {
+                          console.log('Old resume deleted:', oldResumePath);
+                      }
+                  });
+              } else {
+                  console.log('Old resume does not exist, skipping deletion:', oldResumePath);
+              }
+          });
+      }
 
-    // Rename the resume file with the candidate's email
-    if (resumePath && candidate.email) {
-      const fileExtension = path.extname(resumePath); // Get the file extension (e.g., .pdf, .docx)
-      const newResumeName = `${candidate.email}${fileExtension}`; // Rename file to email + extension
-      const newResumePath = path.join(path.dirname(resumePath), newResumeName); // Get new file path
+      // Rename the resume file with the candidate's email
+      if (resumePath && candidate.email) {
+          const fileExtension = path.extname(resumePath); // Get the file extension
+          const newResumeName = `${candidate.email}${fileExtension}`; // Rename file to email + extension
+          const newResumePath = path.join(path.dirname(resumePath), newResumeName); // New file path
 
-      console.log('Old resume path:', resumePath);
-      console.log('New resume path:', newResumePath);
+          fs.rename(resumePath, newResumePath, (err) => {
+              if (err) {
+                  console.error('Error renaming file:', err);
+                  return res.status(500).json({ message: 'Error renaming file', error: err.message });
+              }
+              console.log('File renamed successfully to:', newResumePath);
+              resumePath = newResumePath; // Update resume path
+          });
+      }
 
-      // Rename the file
-      fs.rename(resumePath, newResumePath, (err) => {
-        if (err) {
-          console.error('Error renaming file:', err); // Detailed error logging
-          return res.status(500).json({ message: 'Error renaming file', error: err.message }); // Return on error
-        }
-        console.log('File renamed successfully to:', newResumePath);
-        resumePath = newResumePath; // Update the resume path to the new renamed file
-      });
-    }
+      // Update or create the profile
+      const profile = await Profile.findOneAndUpdate(
+          { candidate_id: Id },
+          {
+              dob,
+              marks,
+              university,
+              skills,
+              resume: resumePath,
+              company,
+              role,
+              workExperience,
+              working,
+              name: candidate.name, // Get name from candidate schema
+              email: candidate.email // Get email from candidate schema
+          },
+          { upsert: true, new: true } // Create a new profile if it doesn't exist
+      );
 
-    // Update or create the profile
-    const profile = await Profile.findOneAndUpdate(
-      { candidate_id: Id }, // Changed candidateId to candidate_id
-      {
-        dob,
-        marks,
-        university,
-        skills,
-        resume: resumePath, // Save the renamed resume path
-        company,
-        role,
-        workExperience,
-        working,
-        name: candidate.name, // Fetching name from the candidate schema
-        email: candidate.email  // Fetching email from the candidate schema
-      },
-      { upsert: true, new: true } // Create a new profile if it doesn't exist
-    );
-
-    return res.status(200).json({ message: 'Profile updated successfully', profile }); // Return response after update
+      return res.status(200).json({ message: 'Profile updated successfully', profile });
   } catch (error) {
-    return res.status(500).json({ message: error.message }); // Return error if caught
+      return res.status(500).json({ message: error.message });
   }
 };
 
-// Get candidate profile (if needed in the future)
-// const getCandidateProfile = async (req, res) => {
-//   const Id = req.params.id;
 
-//   try {
-//     const profile = await Profile.findOne({ candidateId: Id });
-//     if (!profile) {
-//       return res.status(404).json({ message: 'Profile not found' });
-//     }
-
-//     res.status(200).json(profile);
-//   } catch (error) {
-//     res.status(500).json({ message: 'Server error', error: error.message });
-//   }
-// };
-
-module.exports = {
-  registerCandidate,
-  loginCandidate,
-  addProfile,
-  // getCandidateProfile (Uncomment when needed)
-};
+// Export the functions
+module.exports = { registerCandidate, loginCandidate, addProfile };
