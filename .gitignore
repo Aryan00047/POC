@@ -1,0 +1,9 @@
+uploads/
+node_modules/
+postmanCollections/
+postmanEnvironments/
+.env/
+downloads/
+package-lock.json/
+package.json/
+runServerAndTests.js/
