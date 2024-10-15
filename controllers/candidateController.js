@@ -31,24 +31,34 @@ const registerCandidate = async (req, res) => {
 // Candidate login handler
 const loginCandidate = async (req, res) => {
   const { email, password } = req.body;
-
   try {
-    const candidate = await Register.findOne({ email });
-    if (!candidate) {
-      return res.status(404).json({ message: 'Candidate not found' });
-    }
+      const candidate = await Register.findOne({ email });
+      if (!candidate) {
+          return res.status(404).json({ message: 'Candidate not found' });
+      }
+      const match = await bcrypt.compare(password, candidate.password);
+      if (!match) {
+          return res.status(401).json({ message: 'Invalid credentials' });
+      }
 
-    const match = await bcrypt.compare(password, candidate.password);
-    if (!match) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
+      // Generate JWT token
+      const token = jwt.sign(
+          { id: candidate._id, email: candidate.email }, 
+          process.env.JWT_SECRET, 
+          { expiresIn: '1h' }
+      );
 
-    // Generate JWT token
-    const token = jwt.sign({ id: candidate._id, email: candidate.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      // Log the candidate ID
+      console.log("Logged in candidate ID:", candidate._id);
 
-    res.status(200).json({ message: 'Login successful', token });
+      // Send response with token and candidate ID
+      res.status(200).json({ 
+          message: 'Login successful', 
+          token, 
+          candidate_id: candidate._id 
+      });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+      res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 

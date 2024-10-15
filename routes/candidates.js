@@ -52,13 +52,13 @@ router.put('/profile/:id',authMiddleware, upload.single('resume'), addProfile);
 // router.get('/profile/:id', getCandidateProfile);
 
 // Route to get all candidates (optional)
-router.get('/', async (req, res) => {
-  try {
-    const candidates = await Candidate.find();
-    res.status(200).json(candidates);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
-  }
-});
+// router.get('/', async (req, res) => {
+//   try {
+//     const candidates = await Candidate.find();
+//     res.status(200).json(candidates);
+//   } catch (error) {
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// });
 
 module.exports = router;
