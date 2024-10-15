@@ -2,8 +2,8 @@ uploads/
 node_modules/
 postmanCollections/
 postmanEnvironments/
-.env/
+.env
 downloads/
-package-lock.json/
-package.json/
-runServerAndTests.js/
+package-lock.json
+package.json
+runServerAndTests.js
