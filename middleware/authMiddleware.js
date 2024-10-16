@@ -9,6 +9,7 @@ const authMiddleware = (req, res, next) => {
     try {
         // Decoding the token and attaching the HR data to req.hr
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.candidate = decoded; // for candidate details
         req.hr = decoded;  // Attach HR details to req.hr
         next();
     } catch (error) {

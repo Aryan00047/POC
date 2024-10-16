@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const HR = require('../models/hr/register');  // Adjust model name if necessary
 const Job = require('../models/hr/postJob');  // Adjust model name if necessary
+const Candidate = require('../models/candidate/register'); // Import the Candidate model
 
 // HR Registration
 const registerHR = async (req, res) => {
@@ -68,4 +69,23 @@ const postJob = async (req, res) => {
     }
 };
 
-module.exports = { registerHR, loginHR, postJob };
+// Fetch all candidates
+const fetchCandidates = async (req, res) => {
+  try {
+      // Fetch all candidates, excluding password or any sensitive information
+      const candidates = await Candidate.find({}, { password: 0 }); // Exclude the password field in the results
+      
+      // Respond with the list of candidates
+      res.status(200).json(candidates);
+  } catch (error) {
+      console.error("Error fetching candidates:", error);
+      res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+module.exports = {
+   registerHR,
+   loginHR,
+   postJob,
+   fetchCandidates
+ };

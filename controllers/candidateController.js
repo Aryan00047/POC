@@ -4,8 +4,7 @@ const Register = require('../models/candidate/register');
 const Profile = require('../models/candidate/profile');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-// const Job = require('../models/hr/postJob');
-// const HR = require('../models/hr/register');
+const Job = require('../models/hr/postJob');
 
 // Candidate registration handler
 const registerCandidate = async (req, res) => {
@@ -142,9 +141,29 @@ const getCandidateProfile = async (req, res) => {
   }
 };
 
+// Fetch all jobs with HR details
+const getAllJobs = async (req, res) => {
+    try {
+        // Populate hrId to get HR's name and email
+        const jobs = await Job.find().populate('hrId', 'name email');
+
+        res.status(200).json({
+            message: 'Jobs fetched successfully',
+            jobs: jobs
+        });
+    } catch (error) {
+        console.error("Error fetching jobs:", error);
+        res.status(500).json({
+            message: 'Server error',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
   registerCandidate,
   loginCandidate,
   addProfile,
-  getCandidateProfile
+  getCandidateProfile,
+  getAllJobs
 };

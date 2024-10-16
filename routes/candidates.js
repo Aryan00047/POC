@@ -8,7 +8,8 @@ const {
   registerCandidate,
   loginCandidate,
   addProfile,
-  getCandidateProfile
+  getCandidateProfile,
+  getAllJobs
 } = require('../controllers/candidateController');
 
 // Set up multer for file storage
@@ -46,5 +47,8 @@ router.put('/profile/:id', authMiddleware, upload.single('resume'), addProfile);
 
 // Route for getting candidate profile
 router.get('/profile/:id', authMiddleware, getCandidateProfile);
+
+// Route for fetching all job postings with HR details
+router.get('/jobs', authMiddleware, getAllJobs);
 
 module.exports = router;
