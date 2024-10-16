@@ -1,43 +1,31 @@
-const mongoose = require("mongoose")
+const mongoose = require("mongoose");
 
 const jobSchema = new mongoose.Schema({
     hrId: {
         type: mongoose.Schema.Types.ObjectId, // Reference to the HR model
         required: true,
-        ref: 'Job' // Change 'HR' to your actual HR model name if different
+        ref: 'HR' // Reference to the HR model
     },
-    name: {
-        type: String,
-        required: true,
-        // immutable: true, // Make it immutable in Mongoose
-      },
-      email: {
-        type: String,
-        required: true,
-        lowercase: true,
-        trim: true,
-        // immutable: true, // Make it immutable in Mongoose
-      },
-    company:{
+    company: {
         type: String,
         required: true
     },
-    role:{
+    role: {
         type: String,
         required: true
     },
-    jobDescription:{
+    jobDescription: {
         type: String,
         required: true
     },
-    experienceRequired:{
+    experienceRequired: {
         type: String,
         required: true
     },
-    package:{
+    package: {
         type: String,
         required: true
     }
-})
+});
 
-module.exports = mongoose.model("addJob", jobSchema)
+module.exports = mongoose.model("Job", jobSchema);
