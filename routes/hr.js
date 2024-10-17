@@ -7,6 +7,7 @@ const {
   postJob,
   fetchCandidates,
   fetchCandidateProfile,
+  downloadResume
 } = require('../controllers/hrController');
 
 // Route for HR registration
@@ -26,5 +27,8 @@ router.get('/candidates/id/:id', authMiddleware.verifyTokenHR, fetchCandidatePro
 
 // Route for fetching candidate profile by email
 router.get('/candidates/email/:email', authMiddleware.verifyTokenHR, fetchCandidateProfile);
+
+// Route for downloading a candidate's resume (HR must be authenticated)
+router.get('/resume/email/:email', authMiddleware.verifyTokenHR, downloadResume);
 
 module.exports = router;

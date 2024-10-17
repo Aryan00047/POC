@@ -5,6 +5,9 @@ const Profile = require('../models/candidate/profile');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const Job = require('../models/hr/postJob');
+// const Application = require('../models/jobApplication/application');
+// const HR = require('../models/hr/register');
+// const nodemailer = require('nodemailer');
 
 // Candidate registration handler
 const registerCandidate = async (req, res) => {

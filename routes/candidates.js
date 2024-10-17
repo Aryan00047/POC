@@ -11,7 +11,7 @@ router.post('/register', candidateController.registerCandidate);
 router.post('/login', candidateController.loginCandidate);
 
 // Add or update profile
-router.post('/profile/:id', authMiddleware.verifyToken, upload.single('resume'), candidateController.addProfile);
+router.put('/profile/:id', authMiddleware.verifyToken, upload.single('resume'), candidateController.addProfile);
 
 // Get candidate profile
 router.get('/profile/:id', authMiddleware.verifyToken, candidateController.getCandidateProfile);
