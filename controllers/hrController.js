@@ -1,8 +1,11 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const HR = require('../models/hr/register');  // Adjust model name if necessary
-const Job = require('../models/hr/postJob');  // Adjust model name if necessary
-const Candidate = require('../models/candidate/register'); // Import the Candidate model
+const HR = require('../models/hr/register');
+const Job = require('../models/hr/postJob');
+const Candidate = require('../models/candidate/register');
+const CandidateProfile = require('../models/candidate/profile');
+const path = require('path');
+const fs = require('fs');
 
 // HR Registration
 const registerHR = async (req, res) => {
@@ -26,34 +29,39 @@ const loginHR = async (req, res) => {
         if (!hr) {
             return res.status(404).json({ message: 'HR not found' });
         }
+
         const match = await bcrypt.compare(password, hr.password);
         if (!match) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
-        // Include name and email in the token
-        const token = jwt.sign({ id: hr._id, name: hr.name, email: hr.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+        const token = jwt.sign(
+            { id: hr._id, name: hr.name, email: hr.email },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+
         res.status(200).json({ message: 'Login successful', token, hr: { id: hr._id, name: hr.name, email: hr.email } });
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
 
-// Post Job (accepting hrId in the route)
+// Post Job
 const postJob = async (req, res) => {
-    const { hrId } = req.params; // Extract hrId from route params
+    const { hrId } = req.params;
     const { company, role, jobDescription, experienceRequired, package } = req.body;
-    const hrTokenId = req.hr.id; // Extract HR ID from token
+    const hrTokenId = req.hr.id;
 
     if (hrId !== hrTokenId) {
         return res.status(403).json({ message: 'Access denied. You can only post jobs for your account.' });
     }
 
     try {
-        // Automatically associate the HR's details with the job posting
         const newJob = new Job({
-            hrId,  // Use hrId from the route
-            name: req.hr.name,  // Automatically include HR's name
-            email: req.hr.email,  // Automatically include HR's email
+            hrId,
+            name: req.hr.name,
+            email: req.hr.email,
             company,
             role,
             jobDescription,
@@ -69,23 +77,105 @@ const postJob = async (req, res) => {
     }
 };
 
-// Fetch all candidates
+// Fetch all candidates with specific fields from both Candidate and Profile schemas
 const fetchCandidates = async (req, res) => {
   try {
-      // Fetch all candidates, excluding password or any sensitive information
-      const candidates = await Candidate.find({}, { password: 0 }); // Exclude the password field in the results
-      
-      // Respond with the list of candidates
-      res.status(200).json(candidates);
+      // Fetch all candidates from the 'Candidate' collection
+      const candidates = await Candidate.find({}, 'name email'); // Only get name and email from the 'Candidate' schema
+
+      // Map over the candidates and fetch their profiles
+      const candidatesWithProfiles = await Promise.all(candidates.map(async candidate => {
+          const profile = await CandidateProfile.findOne({ candidate_id: candidate._id }, 'skills working workExperience'); // Fetch relevant fields from the profile
+
+          // Format the result to include profile information
+          return {
+              name: candidate.name,
+              email: candidate.email,
+              skills: profile ? profile.skills : [], // Default to an empty array if no profile is found
+              isWorking: profile ? profile.working : false, // Default to false if no profile is found
+              workExperience: profile && profile.working ? profile.workExperience : null // Include workExperience only if isWorking is true
+          };
+      }));
+
+      res.status(200).json({ message: 'Candidates fetched successfully', candidates: candidatesWithProfiles });
   } catch (error) {
       console.error("Error fetching candidates:", error);
       res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
+// Fetch a single candidate's profile by either email or ObjectId
+const fetchCandidateProfile = async (req, res) => {
+  const { id, email } = req.params;  // `id` will be present for ID routes, `email` for email routes
+  try {
+      let candidate;
+
+      // Check if the route is using `id` (ObjectId) or `email`
+      if (id) {
+          // Check if 'id' is a valid ObjectId or fallback to searching by email
+          if (id.match(/^[0-9a-fA-F]{24}$/)) {
+              candidate = await Candidate.findById(id);  // Query by ObjectId
+          } else {
+              return res.status(400).json({ message: 'Invalid ID format' });
+          }
+      } else if (email) {
+          candidate = await Candidate.findOne({ email });  // Query by email
+      }
+
+      if (!candidate) {
+          return res.status(404).json({ message: 'Candidate not found' });
+      }
+
+      const profile = await CandidateProfile.findOne({ candidate_id: candidate._id });
+      if (!profile) {
+          return res.status(404).json({ message: 'Profile not found for this candidate.' });
+      }
+
+      res.status(200).json({ message: 'Candidate profile fetched successfully', profile });
+  } catch (error) {
+      console.error("Error fetching candidate profile:", error);
+      res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Download Candidate's Resume
+const downloadResume = async (req, res) => {
+  const { candidateId } = req.params;
+
+  try {
+      // Fetch the candidate's profile using candidateId
+      const profile = await CandidateProfile.findOne({ candidate_id: candidateId });
+
+      if (!profile || !profile.resume) {
+          return res.status(404).json({ message: 'Resume not found for this candidate.' });
+      }
+
+      // Build the path to the resume file
+      const resumePath = path.join(__dirname, '..', profile.resume);
+
+      // Check if the file exists
+      if (!fs.existsSync(resumePath)) {
+          return res.status(404).json({ message: 'Resume file not found on the server.' });
+      }
+
+      // Serve the resume file for download
+      res.download(resumePath, (err) => {
+          if (err) {
+              console.error("Error while downloading the resume:", err);
+              return res.status(500).json({ message: 'Error downloading resume.', error: err.message });
+          }
+      });
+  } catch (error) {
+      console.error("Error fetching resume:", error);
+      res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 module.exports = {
-   registerHR,
-   loginHR,
-   postJob,
-   fetchCandidates
- };
+  registerHR,
+  loginHR,
+  postJob,
+  fetchCandidates,
+  fetchCandidateProfile,
+  downloadResume
+};

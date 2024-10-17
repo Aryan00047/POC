@@ -1,7 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const authMiddleware = require('../middleware/authmiddleware');
-const { registerHR, loginHR, postJob, fetchCandidates } = require('../controllers/hrController');
+const authMiddleware = require('../middleware/authMiddleware');
+const {
+  registerHR,
+  loginHR,
+  postJob,
+  fetchCandidates,
+  fetchCandidateProfile,
+} = require('../controllers/hrController');
 
 // Route for HR registration
 router.post('/register', registerHR);
@@ -9,10 +15,16 @@ router.post('/register', registerHR);
 // Route for HR login
 router.post('/login', loginHR);
 
-// Route for posting job (only if logged in and hrId is provided in the route)
-router.post('/postJob/:hrId', authMiddleware, postJob); // Change 'jobs' to 'postJob' for consistency
+// Route for posting a job (only if logged in and hrId is provided in the route)
+router.post('/postJob/:hrId', authMiddleware.verifyTokenHR, postJob);
 
-// Route for fetching candidates
-router.get('/candidates', authMiddleware, fetchCandidates); // Ensure HR is authenticated before fetching
+// Route for fetching all candidates (HR must be authenticated)
+router.get('/candidates', authMiddleware.verifyTokenHR, fetchCandidates);
+
+// Route for fetching candidate profile by ID
+router.get('/candidates/id/:id', authMiddleware.verifyTokenHR, fetchCandidateProfile);
+
+// Route for fetching candidate profile by email
+router.get('/candidates/email/:email', authMiddleware.verifyTokenHR, fetchCandidateProfile);
 
 module.exports = router;

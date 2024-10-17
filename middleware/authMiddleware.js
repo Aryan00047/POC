@@ -1,20 +1,40 @@
 const jwt = require('jsonwebtoken');
 
-const authMiddleware = (req, res, next) => {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+// Middleware to verify candidate's token
+const verifyToken = (req, res, next) => {
+    const token = req.headers['authorization'];
     if (!token) {
-        return res.status(401).json({ message: 'Authorization token missing' });
+        return res.status(403).json({ message: 'No token provided' });
     }
 
-    try {
-        // Decoding the token and attaching the HR data to req.hr
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.candidate = decoded; // for candidate details
-        req.hr = decoded;  // Attach HR details to req.hr
+    jwt.verify(token.split(" ")[1], process.env.JWT_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(500).json({ message: 'Failed to authenticate token' });
+        }
+
+        req.candidate = decoded;
         next();
-    } catch (error) {
-        return res.status(401).json({ message: 'Invalid or expired token', error: error.message });
-    }
+    });
 };
 
-module.exports = authMiddleware;
+// Middleware to verify HR's token
+const verifyTokenHR = (req, res, next) => {
+    const token = req.headers['authorization'];
+    if (!token) {
+        return res.status(403).json({ message: 'No token provided' });
+    }
+
+    jwt.verify(token.split(" ")[1], process.env.JWT_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(500).json({ message: 'Failed to authenticate token' });
+        }
+
+        req.hr = decoded;
+        next();
+    });
+};
+
+module.exports = {
+    verifyToken,
+    verifyTokenHR
+};
