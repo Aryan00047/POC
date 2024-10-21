@@ -19,7 +19,7 @@ router.get('/profile/:id', authMiddleware.verifyToken, candidateController.getCa
 // Get all jobs
 router.get('/jobs', authMiddleware.verifyToken, candidateController.getAllJobs);
 
-// Download resume (HR access)
-router.get('/resume/:id', authMiddleware.verifyTokenHR, candidateController.downloadResume);
+// Route for candidate to apply for a job
+router.post('/apply', candidateController.applyForJob);
 
 module.exports = router;

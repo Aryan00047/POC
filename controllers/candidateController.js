@@ -2,9 +2,11 @@ const fs = require('fs').promises;
 const path = require('path');
 const Register = require('../models/candidate/register');
 const Profile = require('../models/candidate/profile');
+const Application = require('../models/candidate/application')
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const Job = require('../models/hr/postJob');
+const HR = require('../models/hr/register');  // HR model
 
 // Candidate registration handler
 const registerCandidate = async (req, res) => {
@@ -125,23 +127,72 @@ const getAllJobs = async (req, res) => {
     }
 };
 
-// HR downloads candidate resume
-const downloadResume = async (req, res) => {
+// Candidate applies for a job
+const applyForJob = async (req, res) => {
+    const { jobId, candidateId, resume } = req.body;
+
     try {
-        const { id } = req.params;
-        const profile = await Profile.findOne({ candidate_id: id });
-        if (!profile || !profile.resume) {
-            return res.status(404).json({ message: 'Resume not found for this candidate.' });
+        // Step 1: Check if the job exists
+        const job = await Job.findById(jobId).populate('hrId');  // Fetch the job along with HR details
+        if (!job) {
+            return res.status(404).json({ message: 'Job not found' });
         }
-        const resumePath = path.resolve(profile.resume);
-        res.download(resumePath, (err) => {
-            if (err) {
-                return res.status(500).json({ message: 'Error downloading resume', error: err.message });
+
+        // Step 2: Save the job application
+        const newApplication = new Application({
+            candidateId,
+            jobId,
+            resume
+        });
+        await newApplication.save();
+
+        // Step 3: Get HR details from the populated 'hrId'
+        const hrEmail = job.hrId.email;
+
+        // Step 4: Configure nodemailer transporter
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',  // You can change this to your email provider (or use SMTP)
+            auth: {
+                user: process.env.SMTP_USER,  // Your email
+                pass: process.env.SMTP_PASS   // Your password or app-specific password
+            }
+        });
+
+        // Step 5: Define the email options
+        const mailOptions = {
+            from: process.env.SMTP_USER,  // Sender's email address
+            to: hrEmail,                  // HR's email address
+            subject: 'New Job Application Received',
+            text: `A candidate has applied for the job "${job.role}". Candidate ID: ${candidateId}.`,
+            attachments: [
+                {
+                    filename: 'resume.pdf',  // Name of the file attached
+                    path: resume  // Resume file path (ensure resume is stored in a proper location)
+                }
+            ]
+        };
+
+        // Step 6: Send the email
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.error('Error sending email:', error);
+                return res.status(500).json({ message: 'Failed to send email to HR', error: error.message });
+            } else {
+                console.log('Email sent:', info.response);
+                res.status(200).json({ message: 'Application submitted and HR notified successfully' });
             }
         });
     } catch (error) {
+        console.error("Error applying for job:", error);
         return res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
 
-module.exports = { registerCandidate, loginCandidate, addProfile, getCandidateProfile, getAllJobs, downloadResume };
+module.exports = { 
+    registerCandidate,
+     loginCandidate,
+     addProfile,
+     getCandidateProfile,
+     getAllJobs,
+     applyForJob
+     };
