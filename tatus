@@ -1,0 +1,17 @@
+[33mffbb049[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m)[m Hr can download resumes now
+[33m46f19ba[m Updated view candidates and candidate's profile in hr portal
+[33m6dd2648[m View candidates, view jobs routes have been added
+[33m14fb36f[m hr portal is working well
+[33m96d205c[m updated candidate controller for updating resume path as same as its renaming
+[33m534a162[m updated candidateController and jwt is working fine
+[33m23ace65[m Update .gitignore to ignore specific files
+[33m4a21486[m Updated .gitignore
+[33m29d7c16[m Update .gitignore and remove tracked files
+[33mce1923c[m Added git ignore
+[33mdcc9706[m added jwt in the code
+[33mcb7d82e[m updated hr controller
+[33m9964a8f[m added job posting in hr section
+[33mec6d126[m added hashing and created Hr routes,controller
+[33m453a972[m code updated
+[33m4dbe0dc[m file system added
+[33m82e63c6[m working correctly at initial stage
