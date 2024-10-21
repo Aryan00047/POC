@@ -5,9 +5,6 @@ const Profile = require('../models/candidate/profile');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const Job = require('../models/hr/postJob');
-// const Application = require('../models/jobApplication/application');
-// const HR = require('../models/hr/register');
-// const nodemailer = require('nodemailer');
 
 // Candidate registration handler
 const registerCandidate = async (req, res) => {
@@ -16,11 +13,9 @@ const registerCandidate = async (req, res) => {
         if (!password) {
             return res.status(400).json({ message: 'Password is required' });
         }
-
         const hashedPassword = await bcrypt.hash(password, 10);
         const newCandidate = new Register({ name, email, password: hashedPassword });
         const savedCandidate = await newCandidate.save();
-
         res.status(201).json({ message: 'Candidate registered successfully', candidate: savedCandidate });
     } catch (error) {
         console.error("Error during candidate registration:", error);
@@ -36,18 +31,11 @@ const loginCandidate = async (req, res) => {
         if (!candidate) {
             return res.status(404).json({ message: 'Candidate not found' });
         }
-
         const match = await bcrypt.compare(password, candidate.password);
         if (!match) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
-
-        const token = jwt.sign(
-            { id: candidate._id, email: candidate.email },
-            process.env.JWT_SECRET,
-            { expiresIn: '1h' }
-        );
-
+        const token = jwt.sign({ id: candidate._id, email: candidate.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
         res.status(200).json({ message: 'Login successful', token, candidate: { id: candidate._id, name: candidate.name, email: candidate.email } });
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
@@ -59,12 +47,10 @@ const addProfile = async (req, res) => {
     try {
         const { dob, marks, university, skills, company, role, workExperience, working } = req.body;
         const Id = req.params.id; // Candidate ID from URL
-
         const candidate = await Register.findById(Id);
         if (!candidate) {
             return res.status(404).json({ message: 'Candidate not found' });
         }
-
         const existingProfile = await Profile.findOne({ candidate_id: Id });
         let resumePath = req.file ? req.file.path : null;
 
@@ -97,7 +83,6 @@ const addProfile = async (req, res) => {
             { dob, marks, university, skills, resume: resumePath, company, role, workExperience, working, name: candidate.name, email: candidate.email },
             { upsert: true, new: true }
         );
-
         return res.status(200).json({ message: 'Profile updated successfully', profile });
     } catch (error) {
         return res.status(500).json({ message: error.message });
@@ -112,15 +97,17 @@ const getCandidateProfile = async (req, res) => {
         if (String(loggedInCandidateId) !== String(requestedCandidateId)) {
             return res.status(403).json({ message: 'Access denied. You can only view your own profile.' });
         }
-
         const candidate = await Register.findById(requestedCandidateId);
         if (!candidate) {
             return res.status(404).json({ message: 'Candidate not found' });
         }
-
         const profile = await Profile.findOne({ candidate_id: requestedCandidateId });
-        const candidateDetails = { id: candidate._id, name: candidate.name, email: candidate.email, profile: profile || null };
-
+        const candidateDetails = {
+            id: candidate._id,
+            name: candidate.name,
+            email: candidate.email,
+            profile: profile || null
+        };
         return res.status(200).json({ message: 'Candidate details fetched successfully', candidateDetails });
     } catch (error) {
         return res.status(500).json({ message: 'Server error', error: error.message });
@@ -143,11 +130,9 @@ const downloadResume = async (req, res) => {
     try {
         const { id } = req.params;
         const profile = await Profile.findOne({ candidate_id: id });
-
         if (!profile || !profile.resume) {
             return res.status(404).json({ message: 'Resume not found for this candidate.' });
         }
-
         const resumePath = path.resolve(profile.resume);
         res.download(resumePath, (err) => {
             if (err) {
@@ -159,11 +144,4 @@ const downloadResume = async (req, res) => {
     }
 };
 
-module.exports = {
-    registerCandidate,
-    loginCandidate,
-    addProfile,
-    getCandidateProfile,
-    getAllJobs,
-    downloadResume
-};
+module.exports = { registerCandidate, loginCandidate, addProfile, getCandidateProfile, getAllJobs, downloadResume };
