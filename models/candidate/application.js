@@ -15,11 +15,14 @@ const applicationSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    candidateProfile: {
+        type: Object,  // Store candidate profile details as an object
+        required: true
+    },
     appliedAt: {
         type: Date,
         default: Date.now
     }
 });
 
-module.exports =  mongoose.model('application', applicationSchema);
-
+module.exports = mongoose.model('Application', applicationSchema);

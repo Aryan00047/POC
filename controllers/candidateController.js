@@ -129,64 +129,51 @@ const getAllJobs = async (req, res) => {
 
 // Candidate applies for a job
 const applyForJob = async (req, res) => {
-    const { jobId, candidateId, resume } = req.body;
-
+    const { jobId } = req.params.id; // Extract jobId from the URL parameters
+    const candidateId = req.candidate.id; // Get candidate ID from the token
+  
     try {
-        // Step 1: Check if the job exists
-        const job = await Job.findById(jobId).populate('hrId');  // Fetch the job along with HR details
-        if (!job) {
-            return res.status(404).json({ message: 'Job not found' });
+      // Check if job exists
+      const job = await Job.findById(jobId);
+      if (!job) {
+        return res.status(404).json({ message: 'Job not found' });
+      }
+  
+      // Fetch candidate profile details
+      const candidate = await Register.findById(candidateId);
+      if (!candidate) {
+        return res.status(404).json({ message: 'Candidate not found' });
+      }
+  
+      const profile = await Profile.findOne({ candidate_id: candidateId });
+      if (!profile || !profile.resume) {
+        return res.status(404).json({ message: 'Candidate profile or resume not found' });
+      }
+  
+      // Create the application with complete candidate profile details
+      const newApplication = new Application({
+        candidateId,
+        jobId,
+        resume: profile.resume, // Use the resume path from the profile
+        appliedAt: Date.now(), // Set the applied date
+        candidateProfile: {
+          name: candidate.name,
+          email: candidate.email,
+          skills: profile.skills,
+          experience: profile.workExperience,
         }
-
-        // Step 2: Save the job application
-        const newApplication = new Application({
-            candidateId,
-            jobId,
-            resume
-        });
-        await newApplication.save();
-
-        // Step 3: Get HR details from the populated 'hrId'
-        const hrEmail = job.hrId.email;
-
-        // Step 4: Configure nodemailer transporter
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',  // You can change this to your email provider (or use SMTP)
-            auth: {
-                user: process.env.SMTP_USER,  // Your email
-                pass: process.env.SMTP_PASS   // Your password or app-specific password
-            }
-        });
-
-        // Step 5: Define the email options
-        const mailOptions = {
-            from: process.env.SMTP_USER,  // Sender's email address
-            to: hrEmail,                  // HR's email address
-            subject: 'New Job Application Received',
-            text: `A candidate has applied for the job "${job.role}". Candidate ID: ${candidateId}.`,
-            attachments: [
-                {
-                    filename: 'resume.pdf',  // Name of the file attached
-                    path: resume  // Resume file path (ensure resume is stored in a proper location)
-                }
-            ]
-        };
-
-        // Step 6: Send the email
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                console.error('Error sending email:', error);
-                return res.status(500).json({ message: 'Failed to send email to HR', error: error.message });
-            } else {
-                console.log('Email sent:', info.response);
-                res.status(200).json({ message: 'Application submitted and HR notified successfully' });
-            }
-        });
+      });
+  
+      // Save the application
+      const savedApplication = await newApplication.save();
+  
+      // Send response on successful application
+      res.status(200).json({ message: 'Application submitted successfully!' });
     } catch (error) {
-        console.error("Error applying for job:", error);
-        return res.status(500).json({ message: 'Server error', error: error.message });
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred while applying for the job.' });
     }
-};
+    };
 
 module.exports = { 
     registerCandidate,

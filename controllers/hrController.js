@@ -45,11 +45,30 @@ const postJob = async (req, res) => {
     const { hrId } = req.params;
     const { company, role, jobDescription, experienceRequired, package } = req.body;
     const hrTokenId = req.hr.id;
+
     if (hrId !== hrTokenId) {
         return res.status(403).json({ message: 'Access denied. You can only post jobs for your account.' });
     }
+
     try {
-        const newJob = new Job({ hrId, name: req.hr.name, email: req.hr.email, company, role, jobDescription, experienceRequired, package });
+        // Fetch the latest jobId to generate the next jobId
+        const latestJob = await Job.findOne().sort({ jobId: -1 }).exec();
+        
+        // Ensure nextJobId is a number and handle the case where there are no jobs yet
+        const nextJobId = latestJob && latestJob.jobId ? latestJob.jobId + 1 : 1;
+
+        const newJob = new Job({
+            jobId: nextJobId, // Use the simplified, readable job ID
+            hrId,
+            name: req.hr.name,
+            email: req.hr.email,
+            company,
+            role,
+            jobDescription,
+            experienceRequired,
+            package,
+        });
+
         const savedJob = await newJob.save();
         res.status(201).json({ message: 'Job posted successfully', job: savedJob });
     } catch (error) {
@@ -57,6 +76,8 @@ const postJob = async (req, res) => {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
+
+
 
 // Fetch all candidates with specific fields
 const fetchCandidates = async (req, res) => {
