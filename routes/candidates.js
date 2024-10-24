@@ -19,7 +19,4 @@ router.get('/profile/:id', authMiddleware.verifyTokenCandidate, candidateControl
 // Get all jobs
 router.get('/jobs', authMiddleware.verifyTokenCandidate, candidateController.getAllJobs);
 
-// Route for candidate to apply for a job (now protected by auth middleware)
-router.post('/apply/:jobId', authMiddleware.verifyTokenCandidate, candidateController.applyForJob);
-
 module.exports = router;

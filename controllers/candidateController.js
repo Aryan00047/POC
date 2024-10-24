@@ -147,78 +147,11 @@ const getAllJobs = async (req, res) => {
     }
 };
 
-// Candidate applies for a job
-const applyForJob = async (req, res) => {
-    const jobId = req.params.jobId; // Extract jobId from the URL parameters
-    const candidateId = req.candidate.id; // Get candidate ID from the token
-  
-    try {
-      // Log jobId and candidateId for debugging
-      console.log('Job ID:', jobId);
-      console.log('Candidate ID:', candidateId);
-  
-      // Check if job exists
-      const job = await Job.findById(jobId);
-      if (!job) {
-        console.log('Job not found');
-        return res.status(404).json({ message: 'Job not found' });
-      }
-  
-      // Fetch candidate profile details
-      const candidate = await Register.findById(candidateId);
-      if (!candidate) {
-        console.log('Candidate not found');
-        return res.status(404).json({ message: 'Candidate not found' });
-      }
-  
-      const profile = await Profile.findOne({ candidate_id: candidateId });
-      if (!profile || !profile.resume) {
-        console.log('Candidate profile or resume not found');
-        return res.status(404).json({ message: 'Candidate profile or resume not found' });
-      }
-  
-      // Check if the candidate has already applied for this job
-      const existingApplication = await Application.findOne({ candidateId, jobId });
-      if (existingApplication) {
-        console.log('Candidate has already applied for this job');
-        return res.status(400).json({ message: 'You have already applied for this job' });
-      }
-  
-      // Create the application with complete candidate profile details
-      const newApplication = new Application({
-        candidateId,
-        jobId,
-        resume: profile.resume, // Use the resume path from the profile
-        appliedAt: Date.now(), // Set the applied date
-        candidateProfile: {
-          name: candidate.name,
-          email: candidate.email,
-          skills: profile.skills,
-          experience: profile.workExperience,
-        }
-      });
-  
-      // Save the application
-      const savedApplication = await newApplication.save();
-      console.log('Application saved:', savedApplication);
-  
-      // Send response on successful application with application details
-      res.status(200).json({
-        message: 'Application submitted successfully!',
-        application: savedApplication, // Return the saved application details
-      });
-    } catch (error) {
-      console.error("Error applying for job:", error); // Log any error that occurs
-      res.status(500).json({ error: 'An error occurred while applying for the job.' });
-    }
-  };
-  
   module.exports = { 
     loginCandidate,
     registerCandidate,
     getCandidateProfile,
     getAllJobs,
     addProfile,
-    applyForJob
 };
   
