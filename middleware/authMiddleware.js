@@ -1,40 +1,32 @@
 const jwt = require('jsonwebtoken');
 
-// Middleware to verify candidate's token
-const verifyToken = (req, res, next) => {
+// Middleware to verify token for both candidates and HR
+const verifyToken = (role) => (req, res, next) => {//role is a parameter for hr or candidate
     const token = req.headers['authorization'];
+
     if (!token) {
         return res.status(403).json({ message: 'No token provided' });
     }
 
-    jwt.verify(token.split(" ")[1], process.env.JWT_SECRET, (err, decoded) => {
-        if (err) {
-            return res.status(500).json({ message: 'Failed to authenticate token' });
-        }
-
-        req.candidate = decoded;
-        next();
-    });
-};
-
-// Middleware to verify HR's token
-const verifyTokenHR = (req, res, next) => {
-    const token = req.headers['authorization'];
-    if (!token) {
-        return res.status(403).json({ message: 'No token provided' });
+    // Extract the token part from the "Bearer token" format
+    const tokenParts = token.split(" ");
+    if (tokenParts.length !== 2 || tokenParts[0] !== 'Bearer') { // Bearer {token} it is splitting the tokenpart 
+        return res.status(401).json({ message: 'Invalid token format' });
     }
 
-    jwt.verify(token.split(" ")[1], process.env.JWT_SECRET, (err, decoded) => {
+    jwt.verify(tokenParts[1], process.env.JWT_SECRET, (err, decoded) => {//after verifying sacidate or hr details are decoded
         if (err) {
-            return res.status(500).json({ message: 'Failed to authenticate token' });
+            return res.status(401).json({ message: 'Failed to authenticate token' });
         }
 
-        req.hr = decoded;
+        // specific role details are attatched
+        req[role] = decoded;
         next();
     });
 };
 
+// Exporting both candidate and HR token verification middleware
 module.exports = {
-    verifyToken,
-    verifyTokenHR
+    verifyTokenCandidate: verifyToken('candidate'),
+    verifyTokenHR: verifyToken('hr')
 };

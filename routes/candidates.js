@@ -11,15 +11,15 @@ router.post('/register', candidateController.registerCandidate);
 router.post('/login', candidateController.loginCandidate);
 
 // Add or update profile
-router.put('/profile/:id', authMiddleware.verifyToken, upload.single('resume'), candidateController.addProfile);
+router.put('/profile/:id', authMiddleware.verifyTokenCandidate, upload.single('resume'), candidateController.addProfile);
 
 // Get candidate profile
-router.get('/profile/:id', authMiddleware.verifyToken, candidateController.getCandidateProfile);
+router.get('/profile/:id', authMiddleware.verifyTokenCandidate, candidateController.getCandidateProfile);
 
 // Get all jobs
-router.get('/jobs', authMiddleware.verifyToken, candidateController.getAllJobs);
+router.get('/jobs', authMiddleware.verifyTokenCandidate, candidateController.getAllJobs);
 
 // Route for candidate to apply for a job (now protected by auth middleware)
-router.post('/apply/:jobId', authMiddleware.verifyToken, candidateController.applyForJob);
+router.post('/apply/:jobId', authMiddleware.verifyTokenCandidate, candidateController.applyForJob);
 
 module.exports = router;

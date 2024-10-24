@@ -1,6 +1,6 @@
-require("dotenv").config();
+require("dotenv").config(); //importing dotenv
 
-const express = require("express");
+const express = require("express"); 
 
 const app = express();
 app.use(express.json()); // To parse incoming JSON requests
@@ -22,7 +22,7 @@ app.use("/api/hr", hr_routes);
 
 const start = async () => {
     try{
-        await connectDB(process.env.MONGODB_URL);
+        await connectDB(process.env.MONGODB_URL); // server will start only after a successful db connection
         app.listen(PORT, () =>{
            console.log(` Connected server at ${PORT}`);
         })
