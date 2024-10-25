@@ -79,20 +79,68 @@ const postJob = async (req, res) => {
 
 
 
-// Fetch all candidates with specific fields
+// Fetch all candidates with name, email, working, and skills
 const fetchCandidates = async (req, res) => {
     try {
         const candidates = await Candidate.find({}, 'name email');
         const candidatesWithProfiles = await Promise.all(candidates.map(async candidate => {
-            const profile = await CandidateProfile.findOne({ candidate_id: candidate._id });
-            return { candidate, profile };
+            const profile = await CandidateProfile.findOne({ candidate_id: candidate._id }, 'working skills');
+            return { 
+                candidate: {
+                    name: candidate.name,
+                    email: candidate.email,
+                },
+                profile: profile ? {
+                    working: profile.working,
+                    skills: profile.skills
+                } : null
+            };
         }));
-        res.status(200).json({ message: 'Candidates fetched successfully', candidates: candidatesWithProfiles });
+        res.status(200).json({ 
+            message: 'Candidates fetched successfully', 
+            candidates: candidatesWithProfiles 
+        });
     } catch (error) {
         console.error("Error fetching candidates:", error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
+
+// Fetch full candidate profile by email
+const fetchCandidateProfile = async (req, res) => {
+    try {
+        const { email } = req.params;
+
+        // Find the profile using email (case-insensitive)
+        const profile = await CandidateProfile.findOne({ email: new RegExp(`^${email}$`, 'i') });
+
+        if (!CandidateProfile) {
+            return res.status(404).json({ message: 'Candidate profile not found' });
+        }
+
+        // Send full profile information in the response
+        res.status(200).json({
+            message: 'Candidate profile fetched successfully',
+            profile: {
+                name: profile.name,
+                email: profile.email,
+                dob: profile.dob,
+                marks: profile.marks,
+                university: profile.university,
+                skills: profile.skills,
+                working: profile.working,
+                company: profile.company,
+                role: profile.role,
+                workExperience: profile.workExperience,
+                resume: profile.resume
+            }
+        });
+    } catch (error) {
+        console.error("Error fetching candidate profile:", error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
 
 // HR downloads candidate resume
 const downloadResumeHR = async (req, res) => {
@@ -132,4 +180,4 @@ const downloadResumeHR = async (req, res) => {
     }
 };
 
-module.exports = { registerHR, loginHR, postJob, fetchCandidates, downloadResumeHR };
+module.exports = { registerHR, loginHR, postJob, fetchCandidates, fetchCandidateProfile, downloadResumeHR };

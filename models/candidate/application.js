@@ -11,17 +11,29 @@ const applicationSchema = new mongoose.Schema({
         ref: 'Job',  // Reference to the job model
         required: true
     },
-    resume: {
+    name: {
         type: String,
+        required: true  // Candidate's name is required
+    },
+    email: {
+        type: String,
+        required: true  // Candidate's email is required
+    },
+    skills: {
+        type: [String],  // Array of skills
         required: true
     },
-    candidateProfile: {
-        type: Object,  // Store candidate profile details as an object
+    resume: {
+        type: String,  // Path or URL to resume file
+        required: true
+    },
+    workExperience: {
+        type: String,  // Candidate's work experience
         required: true
     },
     appliedAt: {
         type: Date,
-        default: Date.now
+        default: Date.now  // Auto-set the date when the application is created
     }
 });
 

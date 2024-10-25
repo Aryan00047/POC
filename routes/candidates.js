@@ -19,4 +19,7 @@ router.get('/profile/:id', authMiddleware.verifyTokenCandidate, candidateControl
 // Get all jobs
 router.get('/jobs', authMiddleware.verifyTokenCandidate, candidateController.getAllJobs);
 
+//Apply for a job
+router.get('/apply/:jobId', authMiddleware.verifyTokenCandidate, candidateController.applyForJob)
+
 module.exports = router;

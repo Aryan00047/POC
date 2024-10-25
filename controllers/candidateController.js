@@ -147,11 +147,62 @@ const getAllJobs = async (req, res) => {
     }
 };
 
+// Apply for a job
+const applyForJob = async (req, res) => {
+    const jobId = req.params.jobId; // Extract jobId from the URL parameters
+    const candidateId = req.candidate.id; // Get candidate ID from the token (decoded from middleware)
+
+    try {
+        // Log jobId and candidateId for debugging
+        console.log('Job ID:', jobId);
+        console.log('Candidate ID:', candidateId);
+
+        // Fetch candidate profile details
+        const profile = await Profile.findOne({ candidate_id: candidateId });
+        if (!profile) {
+            console.log('Candidate profile not found');
+            return res.status(404).json({ message: 'Candidate profile not found' });
+        }
+
+        // Check if the candidate has already applied for this job
+        const existingApplication = await Application.findOne({ candidateId, jobId });
+        if (existingApplication) {
+            console.log('Candidate has already applied for this job');
+            return res.status(400).json({ message: 'You have already applied for this job' });
+        }
+
+        // Create a new application with the required fields
+        const newApplication = new Application({
+            candidateId,          // Reference to candidate ID
+            jobId,                // Reference to job ID
+            name: profile.name,   // Fetch candidate name from profile
+            email: profile.email, // Fetch candidate email from profile
+            skills: profile.skills, // Fetch candidate skills from profile
+            workExperience: profile.workExperience, // Fetch candidate work experience
+            resume: profile.resume, // Fetch candidate resume file path
+        });
+
+        // Save the application
+        const savedApplication = await newApplication.save();
+        console.log('Application saved:', savedApplication);
+
+        // Send response on successful application
+        res.status(200).json({
+            message: 'Application submitted successfully!',
+            application: savedApplication, // Return the saved application details
+        });
+    } catch (error) {
+        console.error('Error applying for job:', error); // Log any errors
+        res.status(500).json({ error: 'An error occurred while applying for the job.' });
+    }
+};
+
   module.exports = { 
     loginCandidate,
     registerCandidate,
     getCandidateProfile,
     getAllJobs,
     addProfile,
+    applyForJob
 };
   
