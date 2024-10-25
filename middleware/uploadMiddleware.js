@@ -1,6 +1,5 @@
 const multer = require('multer');
 const path = require('path');
-
 // Set up file storage and file naming strategy
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -26,5 +25,7 @@ const upload = multer({
         }
     }
 });
+
+console.log("upload middleware called") 
 
 module.exports = upload;

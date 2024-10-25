@@ -2,20 +2,24 @@ const fs = require('fs').promises;
 const path = require('path');
 const Register = require('../models/candidate/register');
 const Profile = require('../models/candidate/profile');
-const Application = require('../models/candidate/application')
+const Application = require('../models/candidate/application');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const Job = require('../models/hr/postJob');
-const HR = require('../models/hr/register');  // HR model
 
 // Candidate registration handler
 const registerCandidate = async (req, res) => {
+    console.log("Register candidate hit ...");
     const { name, email, password } = req.body;
     try {
         if (!password || !email || !name) {
             return res.status(400).json({ message: 'All details are required..' });
+        }else{
+            console.log("All details entered");
         }
         const hashedPassword = await bcrypt.hash(password, 10); // 10 is salt factor which determines the complexity of password (10 is default)
+        console.log("Password hashed sucessfully");
+
         const newCandidate = new Register({ name, email, password: hashedPassword });
         const savedCandidate = await newCandidate.save();
         res.status(201).json({ message: 'Candidate registered successfully', candidate: savedCandidate });
@@ -27,15 +31,23 @@ const registerCandidate = async (req, res) => {
 
 // Candidate login handler
 const loginCandidate = async (req, res) => {
+    console.log("Logged in candidate ...")
     const { email, password } = req.body;
     try {
         const candidate = await Register.findOne({ email });
         if (!candidate) {
+            console.log("Candidate not found")
             return res.status(404).json({ message: 'Candidate not found' });
+        }else{
+            console.log("Candidate found");
         }
         const match = await bcrypt.compare(password, candidate.password);
+        console.log("hashed password comparing");
+
         if (!match) {
             return res.status(401).json({ message: 'Invalid credentials' });
+        }else{
+            console.log("Credentitals matched")
         }
         const token = jwt.sign({ id: candidate._id, email: candidate.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
         res.status(200).json({ message: 'Login successful', token, candidate: { id: candidate._id, name: candidate.name, email: candidate.email } });
@@ -46,6 +58,7 @@ const loginCandidate = async (req, res) => {
 
 // Add or update candidate profile
 const addProfile = async (req, res) => {
+    console.log("Add Profile hit...")
     try {
         const {
              dob,
@@ -56,10 +69,14 @@ const addProfile = async (req, res) => {
              role,
              workExperience,
              working } = req.body;
+        console.log("params requested from body")
         const Id = req.params.id; // Candidate ID from URL
+        console.log("Id requested from url")
         const candidate = await Register.findById(Id);
         if (!candidate) {
             return res.status(404).json({ message: 'Candidate not found' });
+        }else{
+            console.log("Candidate found")
         }
         const existingProfile = await Profile.findOne({ candidate_id: Id });
         let resumePath = req.file ? req.file.path : null;
@@ -83,6 +100,7 @@ const addProfile = async (req, res) => {
             try {
                 await fs.rename(resumePath, newResumePath);
                 resumePath = newResumePath;
+                console.log(`Resume renamed ${resumePath}`)
             } catch (err) {
                 return res.status(500).json({ message: 'Error renaming file', error: err.message });
             }
@@ -113,15 +131,23 @@ const addProfile = async (req, res) => {
 
 // Get candidate profile
 const getCandidateProfile = async (req, res) => {
+    console.log("Fetch profile hit..")
     try {
         const loggedInCandidateId = req.candidate.id;
+        console.log('Candidate id requested from login schema')
         const requestedCandidateId = req.params.id;
+        console.log('Candidate id requested from url')
         if (String(loggedInCandidateId) !== String(requestedCandidateId)) {
+            console.log("Requested id do not match with login id")
             return res.status(403).json({ message: 'Access denied. You can only view your own profile.' });
+        }else{
+            console.log("Ids matched")
         }
         const candidate = await Register.findById(requestedCandidateId);
         if (!candidate) {
             return res.status(404).json({ message: 'Candidate not found' });
+        }else{
+            console.log("Candidate found")
         }
         const profile = await Profile.findOne({ candidate_id: requestedCandidateId });
         const candidateDetails = {
@@ -138,6 +164,7 @@ const getCandidateProfile = async (req, res) => {
 
 // Fetch all jobs with HR details
 const getAllJobs = async (req, res) => {
+    console.log("Fetch all jobs hit...")
     try {
         const jobs = await Job.find().populate('hrId', 'name email');
         res.status(200).json({ message: 'Jobs fetched successfully', jobs });
@@ -149,8 +176,14 @@ const getAllJobs = async (req, res) => {
 
 // Apply for a job
 const applyForJob = async (req, res) => {
+    console.log("Apply for job hit..")
+
     const jobId = req.params.jobId; // Extract jobId from the URL parameters
-    const candidateId = req.candidate.id; // Get candidate ID from the token (decoded from middleware)
+    const candidateId = req.candidate.id; // Get candidate ID from the token decoded from middleware
+
+    console.log('Apply for job route hit');
+    console.log('Job ID:', jobId);
+    console.log('Candidate ID:', candidateId);
 
     try {
         // Log jobId and candidateId for debugging
@@ -173,13 +206,13 @@ const applyForJob = async (req, res) => {
 
         // Create a new application with the required fields
         const newApplication = new Application({
-            candidateId,          // Reference to candidate ID
-            jobId,                // Reference to job ID
-            name: profile.name,   // Fetch candidate name from profile
-            email: profile.email, // Fetch candidate email from profile
-            skills: profile.skills, // Fetch candidate skills from profile
-            workExperience: profile.workExperience, // Fetch candidate work experience
-            resume: profile.resume, // Fetch candidate resume file path
+            candidateId,          
+            jobId,                
+            name: profile.name,   
+            email: profile.email, 
+            skills: profile.skills, 
+            workExperience: profile.workExperience, 
+            resume: profile.resume, 
         });
 
         // Save the application

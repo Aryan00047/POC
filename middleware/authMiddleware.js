@@ -1,7 +1,11 @@
 const jwt = require('jsonwebtoken');
 
+console.log("auth middleware called")
 // Middleware to verify token for both candidates and HR
 const verifyToken = (role) => (req, res, next) => {//role is a parameter for hr or candidate
+
+    console.log("Middleware: Verifying token"); 
+
     const token = req.headers['authorization'];
 
     if (!token) {
@@ -14,7 +18,7 @@ const verifyToken = (role) => (req, res, next) => {//role is a parameter for hr 
         return res.status(401).json({ message: 'Invalid token format' });
     }
 
-    jwt.verify(tokenParts[1], process.env.JWT_SECRET, (err, decoded) => {//after verifying sacidate or hr details are decoded
+    jwt.verify(tokenParts[1], process.env.JWT_SECRET, (err, decoded) => {//after verifying hr details are decoded
         if (err) {
             return res.status(401).json({ message: 'Failed to authenticate token' });
         }

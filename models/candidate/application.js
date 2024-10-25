@@ -13,14 +13,14 @@ const applicationSchema = new mongoose.Schema({
     },
     name: {
         type: String,
-        required: true  // Candidate's name is required
+        required: true 
     },
     email: {
         type: String,
-        required: true  // Candidate's email is required
+        required: true  
     },
     skills: {
-        type: [String],  // Array of skills
+        type: [String], 
         required: true
     },
     resume: {
@@ -28,12 +28,12 @@ const applicationSchema = new mongoose.Schema({
         required: true
     },
     workExperience: {
-        type: String,  // Candidate's work experience
+        type: String,  
         required: true
     },
     appliedAt: {
         type: Date,
-        default: Date.now  // Auto-set the date when the application is created
+        default: Date.now  
     }
 });
 

@@ -4,6 +4,7 @@ const candidateController = require('../controllers/candidateController');
 const authMiddleware = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
+console.log("Candidates routes accessed")
 // Candidate registration
 router.post('/register', candidateController.registerCandidate);
 
@@ -20,6 +21,6 @@ router.get('/profile/:id', authMiddleware.verifyTokenCandidate, candidateControl
 router.get('/jobs', authMiddleware.verifyTokenCandidate, candidateController.getAllJobs);
 
 //Apply for a job
-router.get('/apply/:jobId', authMiddleware.verifyTokenCandidate, candidateController.applyForJob)
+router.post('/apply/:jobId',authMiddleware.verifyTokenCandidate, candidateController.applyForJob)
 
 module.exports = router;

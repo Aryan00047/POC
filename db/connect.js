@@ -1,4 +1,6 @@
 const mongoose = require("mongoose");
+
+console.log("Mongoose DB connected")
 // const { options } = require("../routes/candidates");
 
 //const uri = <connection string> it is used in .env for security reasons

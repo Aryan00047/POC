@@ -9,6 +9,7 @@ const fs = require('fs').promises; // Use the promises API
 
 // HR Registration
 const registerHR = async (req, res) => {
+    console.log("RegisterHr hit...")
     const { name, email, password } = req.body;
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -23,6 +24,7 @@ const registerHR = async (req, res) => {
 
 // HR Login
 const loginHR = async (req, res) => {
+    console.log("Login Hr hit...")
     const { email, password } = req.body;
     try {
         const hr = await HR.findOne({ email });
@@ -42,6 +44,7 @@ const loginHR = async (req, res) => {
 
 // Post Job
 const postJob = async (req, res) => {
+    console.log("Job post hit...")
     const { hrId } = req.params;
     const { company, role, jobDescription, experienceRequired, package } = req.body;
     const hrTokenId = req.hr.id;
@@ -81,6 +84,7 @@ const postJob = async (req, res) => {
 
 // Fetch all candidates with name, email, working, and skills
 const fetchCandidates = async (req, res) => {
+    console.log("Fetch candidates hit...")
     try {
         const candidates = await Candidate.find({}, 'name email');
         const candidatesWithProfiles = await Promise.all(candidates.map(async candidate => {
@@ -108,6 +112,7 @@ const fetchCandidates = async (req, res) => {
 
 // Fetch full candidate profile by email
 const fetchCandidateProfile = async (req, res) => {
+    console.log("Fetch full profile of candidate hit...")
     try {
         const { email } = req.params;
 
@@ -144,6 +149,7 @@ const fetchCandidateProfile = async (req, res) => {
 
 // HR downloads candidate resume
 const downloadResumeHR = async (req, res) => {
+    console.log("Candidate Resume hit...")
     try {
         const candidateEmail = req.params.email;
 
