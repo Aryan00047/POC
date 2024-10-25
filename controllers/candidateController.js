@@ -179,17 +179,10 @@ const applyForJob = async (req, res) => {
     console.log("Apply for job hit..")
 
     const jobId = req.params.jobId; // Extract jobId from the URL parameters
+    console.log(`job id is ${jobId}`)
     const candidateId = req.candidate.id; // Get candidate ID from the token decoded from middleware
 
-    console.log('Apply for job route hit');
-    console.log('Job ID:', jobId);
-    console.log('Candidate ID:', candidateId);
-
     try {
-        // Log jobId and candidateId for debugging
-        console.log('Job ID:', jobId);
-        console.log('Candidate ID:', candidateId);
-
         // Fetch candidate profile details
         const profile = await Profile.findOne({ candidate_id: candidateId });
         if (!profile) {
@@ -236,6 +229,6 @@ const applyForJob = async (req, res) => {
     getCandidateProfile,
     getAllJobs,
     addProfile,
-    applyForJob
+    applyForJob,
 };
   
