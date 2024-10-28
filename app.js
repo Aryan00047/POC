@@ -11,6 +11,7 @@ const PORT = process.env.PORT || 5000;
 
 const candidates_routes = require("./routes/candidates");
 const hr_routes = require("./routes/hr");
+const admin_routes = require("./routes/admin");
 
 app.get("/",(req,res)=>{
     res.send("Server Connected")
@@ -19,6 +20,7 @@ app.get("/",(req,res)=>{
 //middleware or to set router
 app.use("/api/candidates", candidates_routes); 
 app.use("/api/hr", hr_routes); 
+app.use('/api/admin', admin_routes);
 
 const start = async () => {
     try{

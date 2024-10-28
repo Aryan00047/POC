@@ -21,6 +21,9 @@ router.get('/profile/:id', authMiddleware.verifyTokenCandidate, candidateControl
 router.get('/jobs', authMiddleware.verifyTokenCandidate, candidateController.getAllJobs);
 
 //Apply for a job
-router.post('/apply/:jobId',authMiddleware.verifyTokenCandidate, candidateController.applyForJob)
+router.post('/apply/:jobId',authMiddleware.verifyTokenCandidate,(req,res,next) => {
+    console.log("Apply job route hit, job id: ", req.params.jobId);
+    next();
+}, candidateController.applyForJob)
 
 module.exports = router;

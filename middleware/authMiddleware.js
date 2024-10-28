@@ -25,12 +25,14 @@ const verifyToken = (role) => (req, res, next) => {//role is a parameter for hr 
 
         // specific role details are attatched
         req[role] = decoded;
+        console.log("Role is", req[role])
         next();
     });
 };
 
-// Exporting both candidate and HR token verification middleware
+// Exporting admin,  candidate and HR token verification middleware
 module.exports = {
     verifyTokenCandidate: verifyToken('candidate'),
-    verifyTokenHR: verifyToken('hr')
+    verifyTokenHR: verifyToken('hr'),
+    verifyTokenAdmin: verifyToken('admin')
 };
