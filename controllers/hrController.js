@@ -194,8 +194,34 @@ const getJobApplications = async (req, res) => {
         const applications = await Application.find({ jobId })  // Now jobId is treated as a number
             .populate('candidateId', 'name email skills resume workExperience') // Populate candidate details
             .exec();
+        
+        console.log(applications)
 
-        res.status(200).json({ message: 'Job applications fetched successfully', applications });
+        // Fetch job details for the specified jobId
+        const jobDetails = await Job.findOne({ jobId }); // Ensure you have a Job model defined
+
+        // Merge job details into the applications
+        const mergedApplications = applications.map(application => ({
+            applicationId: application._id,
+            candidate: {
+                _id: application.candidateId._id,
+                name: application.candidateId.name,
+                email: application.candidateId.email,
+                skills: application.skills,
+                resume: application.resume,
+                workExperience: application.workExperience,
+            },
+            jobDetails: {
+                jobId: jobDetails.jobId,
+                role: jobDetails.role,
+                company: jobDetails.company,
+                jobDescription: jobDetails.jobDescription,
+                experienceRequired: jobDetails.experienceRequired,
+                package: jobDetails.package,
+            },
+            appliedAt: application.appliedAt // Include appliedAt timestamp if needed
+        }));
+        res.status(200).json({ message: 'Job applications fetched successfully', applications: mergedApplications });
     } catch (error) {
         console.error('Error fetching job applications:', error);
         res.status(500).json({ error: 'Server error while fetching applications' });
