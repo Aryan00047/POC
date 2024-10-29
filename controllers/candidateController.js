@@ -61,77 +61,65 @@ const loginCandidate = async (req, res) => {
 
 // Add or update candidate profile
 const addProfile = async (req, res) => {
-    console.log("Add Profile hit...")
+    console.log("Add Profile hit...");
     try {
-        const {
-             dob,
-             marks,
-             university,
-             skills,
-             company,
-             role,
-             workExperience,
-             working } = req.body;
-        console.log("params requested from body")
-        const Id = req.params.id; // Candidate ID from URL
-        console.log("Id requested from url")
-        const candidate = await Register.findById(Id);
-        if (!candidate) {
-            return res.status(404).json({ message: 'Candidate not found' });
-        }else{
-            console.log("Candidate found")
+      const { dob, marks, university, skills, company, role, workExperience, working } = req.body;
+      const Id = req.params.id; // Candidate ID from URL
+  
+      const candidate = await Register.findById(Id);
+      if (!candidate) {
+        return res.status(404).json({ message: 'Candidate not found' });
+      }
+  
+      const existingProfile = await Profile.findOne({ candidate_id: Id });
+  
+      let resumePath = req.file ? req.file.path : null;
+  
+      // Delete old resume if it exists
+      if (existingProfile && existingProfile.resume && resumePath) {
+        const oldResumePath = path.resolve(existingProfile.resume);
+        try {
+          await fs.access(oldResumePath);
+          await fs.unlink(oldResumePath);
+        } catch (err) {
+          console.log('Old resume does not exist, skipping deletion:', oldResumePath);
         }
-        const existingProfile = await Profile.findOne({ candidate_id: Id });
-        let resumePath = req.file ? req.file.path : null;
-
-        // Delete old resume if it exists
-        if (existingProfile && existingProfile.resume && resumePath) {
-            const oldResumePath = path.resolve(existingProfile.resume);
-            try {
-                await fs.access(oldResumePath);
-                await fs.unlink(oldResumePath);
-            } catch (err) {
-                console.log('Old resume does not exist, skipping deletion:', oldResumePath);
-            }
+      }
+  
+      // Rename the resume file with the candidate's email if resumePath exists
+      if (resumePath && candidate.email) {
+        const fileExtension = path.extname(resumePath);
+        const newResumeName = `${candidate.email}${fileExtension}`;
+        // Ensure the resume path is correct without duplication
+        const newResumePath = path.join(__dirname, '../uploads', newResumeName);
+  
+        try {
+          await fs.rename(resumePath, newResumePath);
+          resumePath = newResumePath;
+        } catch (err) {
+          return res.status(500).json({ message: 'Error renaming file', error: err.message });
         }
-
-        // Rename the resume file with the candidate's email
-        if (resumePath && candidate.email) {
-            const fileExtension = path.extname(resumePath);
-            const newResumeName = `${candidate.email}${fileExtension}`;
-            const newResumePath = path.join(path.dirname(resumePath), newResumeName);
-            try {
-                await fs.rename(resumePath, newResumePath);
-                resumePath = newResumePath;
-                console.log(`Resume renamed ${resumePath}`)
-            } catch (err) {
-                return res.status(500).json({ message: 'Error renaming file', error: err.message });
-            }
-        }
-
-        const profile = await Profile.findOneAndUpdate(
-            { candidate_id: Id },
-            {
-                 dob,
-                 marks,
-                 university,
-                 skills,
-                 resume: resumePath,
-                 company,
-                 role,
-                 workExperience,
-                 working,
-                 name: candidate.name,
-                 email: candidate.email 
-            },
-            { upsert: true, new: true }
-        );
-        return res.status(200).json({ message: 'Profile updated successfully', profile });
+      }
+  
+      // Update or create the profile with the new resume path
+      const profile = await Profile.findOneAndUpdate(
+        { candidate_id: Id },
+        {
+          dob, marks, university, skills, resume: resumePath,
+          company, role, workExperience, working,
+          name: candidate.name, email: candidate.email
+        },
+        { upsert: true, new: true }
+      );
+  
+      return res.status(200).json({ message: 'Profile updated successfully', profile });
+  
     } catch (error) {
-        return res.status(500).json({ message: error.message });
+      return res.status(500).json({ message: error.message });
     }
-};
-
+  };
+  
+  
 // Get candidate profile
 const getCandidateProfile = async (req, res) => {
     console.log("Fetch profile hit..")

@@ -148,45 +148,51 @@ const fetchCandidateProfile = async (req, res) => {
     }
 };
 
-
-// HR downloads candidate resume
+// Download Resume
 const downloadResumeHR = async (req, res) => {
-    console.log("Candidate Resume hit...")
+    const { email } = req.params;
     try {
-        const candidateEmail = req.params.email;
-
-        // Fetch the candidate by email
-        const candidate = await Candidate.findOne({ email: candidateEmail });
+        // Find the candidate using the email
+        const candidate = await Candidate.findOne({ email });
         if (!candidate) {
-            console.log(`Candidate not found with email: ${candidateEmail}`);
-            return res.status(404).json({ message: "Candidate not found." });
+            return res.status(404).json({ message: 'Candidate not found.' });
         }
 
-        // Fetch the candidate's profile
+        // Fetch the candidate's profile using the candidate's ID
         const profile = await CandidateProfile.findOne({ candidate_id: candidate._id });
         if (!profile || !profile.resume) {
-            console.log(`Resume not found for candidate with email: ${candidateEmail}`);
-            return res.status(404).json({ message: "Resume not found for this candidate." });
+            return res.status(404).json({ message: 'Resume not found for this candidate.' });
         }
 
-        // Define the full path to the resume
-        const resumePath = path.join(__dirname, '../', profile.resume);
+        // Get the current resume path in the 'uploads' directory
+        const resumePath = path.join(__dirname, '..', profile.resume);
 
-        // Check if the file exists
-        await fs.access(resumePath); // This will throw if the file does not exist
+        // Ensure the resume file exists using fs.promises
+        try {
+            await fs.access(resumePath); // Check if the file exists
+        } catch {
+            return res.status(404).json({ message: 'Resume file not found on the server.' });
+        }
 
-        // Send the resume file for download
-        res.download(resumePath, (err) => {
-            if (err) {
-                console.error("Error in downloading resume: ", err);
-                return res.status(500).json({ message: "Error downloading the resume." });
-            }
-        });
+        // Define the downloads directory
+        const downloadsDir = path.join(__dirname, '..', 'downloads');
+        await fs.mkdir(downloadsDir, { recursive: true }); // Create the downloads directory if it doesn't exist
+
+        const resumeFileName = path.basename(profile.resume); // Get the resume file name
+        const destinationPath = path.join(downloadsDir, resumeFileName); // Destination path for the resume
+
+        // Copy the resume file from 'uploads' to 'downloads' directory
+        await fs.copyFile(resumePath, destinationPath);
+
+        // Send response indicating that the resume is saved in the downloads directory
+        res.status(200).json({ message: 'Resume downloaded and stored in the downloads directory successfully', downloadPath: destinationPath });
     } catch (error) {
-        console.error("Error fetching candidate or downloading resume: ", error);
-        res.status(500).json({ message: "Server error." });
+        console.error("Error fetching or saving resume:", error);
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
+
+
 
 //get job applications
 const getJobApplications = async (req, res) => {
