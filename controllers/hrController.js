@@ -4,6 +4,7 @@ const HR = require('../models/hr/register');
 const Job = require('../models/hr/postJob');
 const Candidate = require('../models/candidate/register');
 const CandidateProfile = require('../models/candidate/profile');
+const Application = require('../models/candidate/application')
 const path = require('path');
 const fs = require('fs').promises; // Use the promises API
 
@@ -186,4 +187,28 @@ const downloadResumeHR = async (req, res) => {
     }
 };
 
-module.exports = { registerHR, loginHR, postJob, fetchCandidates, fetchCandidateProfile, downloadResumeHR };
+//get job applications
+const getJobApplications = async (req, res) => {
+    const jobId = parseInt(req.params.jobId); // Ensure jobId is treated as a number
+    try {
+        const applications = await Application.find({ jobId })  // Now jobId is treated as a number
+            .populate('candidateId', 'name email skills resume workExperience') // Populate candidate details
+            .exec();
+
+        res.status(200).json({ message: 'Job applications fetched successfully', applications });
+    } catch (error) {
+        console.error('Error fetching job applications:', error);
+        res.status(500).json({ error: 'Server error while fetching applications' });
+    }
+};
+
+
+
+module.exports = { registerHR,
+     loginHR,
+     postJob,
+     fetchCandidates,
+     fetchCandidateProfile,
+     downloadResumeHR,
+     getJobApplications 
+    };

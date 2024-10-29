@@ -23,4 +23,7 @@ router.get('/candidates/email/:email', authMiddleware.verifyTokenHR, hrControlle
 // Route for downloading a candidate's resume (HR must be authenticated)
 router.get('/resume/email/:email', authMiddleware.verifyTokenHR, hrController.downloadResumeHR);
 
+//Route for job applications
+router.get('/jobApplications/:jobId', authMiddleware.verifyTokenHR, hrController.getJobApplications);
+
 module.exports = router;
