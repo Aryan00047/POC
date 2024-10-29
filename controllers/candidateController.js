@@ -6,6 +6,7 @@ const Application = require('../models/candidate/application');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const Job = require('../models/hr/postJob');
+const mongoose = require('mongoose');
 
 // Candidate registration handler
 const registerCandidate = async (req, res) => {
@@ -173,13 +174,11 @@ const getAllJobs = async (req, res) => {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
-
 // Apply for a job
 const applyForJob = async (req, res) => {
-    console.log("Apply for job hit..")
-
+    console.log("Apply for job hit..");
     const jobId = req.params.jobId; // Extract jobId from the URL parameters
-    console.log(`job id is ${jobId}`)
+    console.log(`Job ID is ${jobId}`);
     const candidateId = req.candidate.id; // Get candidate ID from the token decoded from middleware
 
     try {
@@ -199,13 +198,13 @@ const applyForJob = async (req, res) => {
 
         // Create a new application with the required fields
         const newApplication = new Application({
-            candidateId,          
-            jobId,                
-            name: profile.name,   
-            email: profile.email, 
-            skills: profile.skills, 
-            workExperience: profile.workExperience, 
-            resume: profile.resume, 
+            candidateId,
+            jobId, // Keep jobId as a simple string
+            name: profile.name,
+            email: profile.email,
+            skills: profile.skills,
+            workExperience: profile.workExperience,
+            resume: profile.resume,
         });
 
         // Save the application
@@ -222,6 +221,7 @@ const applyForJob = async (req, res) => {
         res.status(500).json({ error: 'An error occurred while applying for the job.' });
     }
 };
+
 
   module.exports = { 
     loginCandidate,

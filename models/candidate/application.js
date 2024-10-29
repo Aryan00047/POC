@@ -7,7 +7,7 @@ const applicationSchema = new mongoose.Schema({
         required: true
     },
     jobId: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Number,// need to do this because mongoose expects object id othwerwise
         ref: 'Job',  // Reference to the job model
         required: true
     },
