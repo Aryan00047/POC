@@ -6,6 +6,8 @@ const Application = require('../models/candidate/application');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const Job = require('../models/hr/postJob');
+const nodemailer = require('nodemailer');
+const HR =  require('../models/hr/register')
 const mongoose = require('mongoose');
 
 // Candidate registration handler
@@ -174,11 +176,13 @@ const getAllJobs = async (req, res) => {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
+
 // Apply for a job
 const applyForJob = async (req, res) => {
     console.log("Apply for job hit..");
     const jobId = req.params.jobId; // Extract jobId from the URL parameters
     console.log(`Job ID is ${jobId}`);
+
     const candidateId = req.candidate.id; // Get candidate ID from the token decoded from middleware
 
     try {
@@ -199,7 +203,7 @@ const applyForJob = async (req, res) => {
         // Create a new application with the required fields
         const newApplication = new Application({
             candidateId,
-            jobId, // Keep jobId as a simple string
+            jobId,
             name: profile.name,
             email: profile.email,
             skills: profile.skills,
@@ -211,6 +215,37 @@ const applyForJob = async (req, res) => {
         const savedApplication = await newApplication.save();
         console.log('Application saved:', savedApplication);
 
+        // Fetch HR email from the job posting
+        const hrDetails = await Job.findOne({ jobId }).populate('hrId', 'email');
+        // Ensure hrId is populated to get the email
+        const hrEmail = hrDetails && hrDetails.hrId ? hrDetails.hrId.email : process.env.DEFAULT_HR_EMAIL; // Fallback if HR email is not found
+
+        // Email configuration using Nodemailer
+        const transporter = nodemailer.createTransport({
+            service: 'gmail', // You can also use other email services like Outlook, Yahoo, etc.
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASSWORD,
+            },
+        });
+
+        // Email content
+        const mailOptions = {
+            from: process.env.EMAIL_USER, // Sender address
+            to: hrEmail, // Recipient HR email
+            subject: `New Job Application from ${profile.name}`, // Subject line
+            text: `Dear HR,\n\n${profile.name} has applied for the job (Job ID: ${jobId}).\n\nCandidate Details:\nName: ${profile.name}\nEmail: ${profile.email}\nSkills: ${profile.skills.join(', ')}\nWork Experience: ${profile.workExperience}\n\nBest regards,\nYour Recruitment Portal`, // Plain text body
+        };
+
+        // Send the email
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.error('Error sending email:', error);
+            } else {
+                console.log('Email sent:', info.response);
+            }
+        });
+
         // Send response on successful application
         res.status(200).json({
             message: 'Application submitted successfully!',
@@ -221,7 +256,6 @@ const applyForJob = async (req, res) => {
         res.status(500).json({ error: 'An error occurred while applying for the job.' });
     }
 };
-
 
   module.exports = { 
     loginCandidate,
