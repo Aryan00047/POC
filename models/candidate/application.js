@@ -31,6 +31,10 @@ const applicationSchema = new mongoose.Schema({
         type: String,  
         required: true
     },
+    isSelected: {
+        type: Boolean,
+        default: false
+    },
     appliedAt: {
         type: Date,
         default: Date.now  

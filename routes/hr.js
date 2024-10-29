@@ -26,4 +26,7 @@ router.get('/resume/email/:email', authMiddleware.verifyTokenHR, hrController.do
 //Route for job applications
 router.get('/jobApplications/:jobId', authMiddleware.verifyTokenHR, hrController.getJobApplications);
 
+//Route for selecting candidates
+router.post('/selectCandidates/email/:email', authMiddleware.verifyTokenHR, hrController.selectCandidateForInterview)
+
 module.exports = router;

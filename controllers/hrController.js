@@ -6,6 +6,7 @@ const Candidate = require('../models/candidate/register');
 const CandidateProfile = require('../models/candidate/profile');
 const Application = require('../models/candidate/application')
 const path = require('path');
+const nodemailer = require('nodemailer');
 const fs = require('fs').promises; // Use the promises API
 
 // HR Registration
@@ -228,6 +229,61 @@ const getJobApplications = async (req, res) => {
     }
 };
 
+// Mark candidate as selected for interview
+const selectCandidateForInterview = async (req, res) => {
+    const { jobId } = req.body;
+    const candidateEmail = req.params.email; // no need to destructure
+  
+    try {
+
+    console.log("Checking for candidate email:", candidateEmail);
+    console.log("Checking for job ID:", jobId);
+      // Check if the candidate has applied for the job
+      const application = await Application.findOne({ email: candidateEmail, jobId: jobId });
+      if (!application) {
+        return res.status(404).json({ message: 'Candidate has not applied for this job' });
+      }
+  
+      // Mark candidate as selected
+      application.isSelected = true; // Correct field name
+      await application.save();
+  
+      // Fetch candidate details
+      const candidate = await Candidate.findOne({ email: candidateEmail });
+      if (!candidate) {
+        return res.status(404).json({ message: 'Candidate not found' });
+      }
+  
+      // Send email to the candidate
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASSWORD,
+        },
+      });
+  
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: candidate.email,
+        subject: `Interview Selection for Job ID: ${jobId}`,
+        text: `Dear ${candidate.name},\n\nCongratulations! You have been selected for an interview for the job you applied for (Job ID: ${jobId}).\n\nBest regards,\nYour Recruitment Team`,
+      };
+  
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.error('Error sending email:', error);
+          return res.status(500).json({ message: 'Error sending email', error });
+        } else {
+          console.log('Email sent:', info.response);
+          return res.status(200).json({ message: 'Candidate selected for interview and email sent' });
+        }
+      });
+  
+    } catch (error) {
+      return res.status(500).json({ message: 'Server error', error: error.message });
+    }
+  };
 
 
 module.exports = { registerHR,
@@ -236,5 +292,6 @@ module.exports = { registerHR,
      fetchCandidates,
      fetchCandidateProfile,
      downloadResumeHR,
-     getJobApplications 
+     getJobApplications,
+     selectCandidateForInterview
     };
