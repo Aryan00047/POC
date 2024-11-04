@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 
-// Define candidate registration schema
 const registerSchema = new mongoose.Schema({
   name: {
     type: String,

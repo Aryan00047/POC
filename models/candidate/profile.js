@@ -38,6 +38,10 @@ const ProfileSchema = new mongoose.Schema({
     type: String, // Store the file path of the uploaded resume
     required: false,
   },
+  working: {
+    type: Boolean,
+    required: true,
+  },
   company: {
     type: String,
     required: function() { return this.working; }, // Only required if working
@@ -49,11 +53,7 @@ const ProfileSchema = new mongoose.Schema({
   workExperience: {
     type: String,
     required: function() { return this.working; }, // Only required if working
-  },
-  working: {
-    type: Boolean,
-    required: true,
-  },
+  }
 }, {
   timestamps: true, // Automatically manage createdAt and updatedAt timestamps
 });

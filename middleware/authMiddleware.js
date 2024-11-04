@@ -1,8 +1,9 @@
 const jwt = require('jsonwebtoken');
 
 console.log("auth middleware called")
-// Middleware to verify token for both candidates and HR
-const verifyToken = (role) => (req, res, next) => {//role is a parameter for hr or candidate
+// Middleware to verify token for admin, candidates and HR
+const verifyToken = (role) => (req, res, next) => {
+//role is a parameter for hr or candidate or admin
 
     console.log("Middleware: Verifying token"); 
 
@@ -18,7 +19,7 @@ const verifyToken = (role) => (req, res, next) => {//role is a parameter for hr 
         return res.status(401).json({ message: 'Invalid token format' });
     }
 
-    jwt.verify(tokenParts[1], process.env.JWT_SECRET, (err, decoded) => {//after verifying hr details are decoded
+    jwt.verify(tokenParts[1], process.env.JWT_SECRET, (err, decoded) => {//after verifying details are decoded
         if (err) {
             return res.status(401).json({ message: 'Failed to authenticate token' });
         }
@@ -30,7 +31,7 @@ const verifyToken = (role) => (req, res, next) => {//role is a parameter for hr 
     });
 };
 
-// Exporting admin,  candidate and HR token verification middleware
+// Exporting admin, candidate and HR token verification middleware
 module.exports = {
     verifyTokenCandidate: verifyToken('candidate'),
     verifyTokenHR: verifyToken('hr'),

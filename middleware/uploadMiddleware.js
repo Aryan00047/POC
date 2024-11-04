@@ -12,11 +12,13 @@ const storage = multer.diskStorage({
 
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 1024 * 1024 * 5 }, // Limit file size to 5 MB
+    limits: { fileSize: 1024 * 1024 * 5 }, // Limit file size to 5 MB 1024 -- 1KB 1024*1024 -- 1MB
     fileFilter: (req, file, cb) => {
         const filetypes = /pdf|doc|docx/; // Allow only specific file types
-        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase()); // verifies ext name
         const mimetype = filetypes.test(file.mimetype);
+        //mimetype also verifies the ext name but it also verifies the content within the file.
+        //Double verification is done due to security reasons
 
         if (mimetype && extname) {
             return cb(null, true);
