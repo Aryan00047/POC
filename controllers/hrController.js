@@ -165,7 +165,7 @@ const downloadResumeHR = async (req, res) => {
         }
 
         // Get the current resume path in the 'uploads' directory
-        const resumePath = path.join(__dirname, '..', profile.resume);
+        const resumePath = profile.resume;
 
         // Ensure the resume file exists using fs.promises
         try {
