@@ -65,7 +65,7 @@ const addProfile = async (req, res) => {
     try {
       const { dob, marks, university, skills, company, role, workExperience, working } = req.body;
       const Id = req.params.id; // Candidate ID from URL
-  
+
       const candidate = await Register.findById(Id);
       if (!candidate) {
         return res.status(404).json({ message: 'Candidate not found' });
@@ -100,7 +100,7 @@ const addProfile = async (req, res) => {
           return res.status(500).json({ message: 'Error renaming file', error: err.message });
         }
       }
-  
+
       // Update or create the profile with the new resume path
       const profile = await Profile.findOneAndUpdate(
         { candidate_id: Id },

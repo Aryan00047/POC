@@ -44,15 +44,13 @@ const ProfileSchema = new mongoose.Schema({
   },
   company: {
     type: String,
-    required: function() { return this.working; }, // Only required if working
   },
   role: {
     type: String,
-    required: function() { return this.working; }, // Only required if working
   },
   workExperience: {
     type: String,
-    required: function() { return this.working; }, // Only required if working
+    required: true
   }
 }, {
   timestamps: true, // Automatically manage createdAt and updatedAt timestamps
