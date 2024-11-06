@@ -292,7 +292,8 @@ const selectCandidateForInterview = async (req, res) => {
   };
 
 
-module.exports = { registerHR,
+module.exports = { 
+     registerHR,
      loginHR,
      postJob,
      fetchCandidates,
