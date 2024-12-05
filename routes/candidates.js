@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const candidateController = require('../controllers/candidateController');
+console.log("Candidates routes accessed")
 const authMiddleware = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
-console.log("Candidates routes accessed")
+// console.log("Candidates routes accessed")
 // Candidate registration
 router.post('/register', candidateController.registerCandidate);
 

@@ -19,6 +19,7 @@ app.get("/",(req,res)=>{
 
 //middleware or to set router
 app.use("/api/candidates", candidates_routes); 
+// because of app.use() middlewares run only at initial stage and subsequents requests are getting skipped
 app.use("/api/hr", hr_routes); 
 app.use('/api/admin', admin_routes);
 
@@ -31,7 +32,7 @@ const start = async () => {
     }
     catch(error){
         console.log(error)
-    }
+    } 
 };
 
 start();

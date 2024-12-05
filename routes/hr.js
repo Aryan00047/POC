@@ -1,9 +1,12 @@
 const express = require('express');
 const router = express.Router();
+
+console.log("Hr routes accessed")
+
 const authMiddleware = require('../middleware/authMiddleware');
 const hrController = require('../controllers/hrController');
 
-console.log("Hr routes accessed")
+// console.log("Hr routes accessed")
 
 // Route for HR registration
 router.post('/register', hrController.registerHR);
