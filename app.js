@@ -1,9 +1,9 @@
-require("dotenv").config(); //importing dotenv
+require("dotenv").config();
 
 const express = require("express"); 
 
 const app = express();
-app.use(express.json()); // To parse incoming JSON requests
+app.use(express.json());
 
 const connectDB = require("./db/connect.js");
 
@@ -17,7 +17,7 @@ app.get("/",(req,res)=>{
     res.send("Server Connected")
 }); 
 
-//middleware or to set router
+
 app.use("/api/candidates", candidates_routes); 
 // because of app.use() middlewares run only at initial stage and subsequents requests are getting skipped
 app.use("/api/hr", hr_routes); 
