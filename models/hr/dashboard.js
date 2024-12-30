@@ -1,6 +1,6 @@
 const mongoose = require("mongoose")
 
-const registerSchema = new mongoose.Schema({
+const hrSchema = new mongoose.Schema({
     name:{
         type: String,
         required: true
@@ -20,4 +20,4 @@ const registerSchema = new mongoose.Schema({
     }
 },{timestamps: true})
 
-module.exports = mongoose.model("HR", registerSchema)
+module.exports = mongoose.model("HR", hrSchema)

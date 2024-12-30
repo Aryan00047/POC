@@ -8,9 +8,6 @@ const authMiddleware = require('../middleware/authMiddleware');
 
 // console.log("admin routes accessed")
 
-// Admin login
-router.post('/login', adminController.loginAdmin);
-
 //fetch candidates
 router.post('/candidates', authMiddleware.verifyTokenAdmin, adminController.fetchCandidates)
 

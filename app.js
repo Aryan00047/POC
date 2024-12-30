@@ -1,38 +1,32 @@
-require("dotenv").config();
-
-const express = require("express"); 
+require('dotenv').config();
+const express = require('express');
+const connectDB = require('./db/connect');
+const candidateRoutes = require('./routes/candidates');
+const userRoutes = require('./routes/user');
 
 const app = express();
-app.use(express.json());
-
-const connectDB = require("./db/connect.js");
-
 const PORT = process.env.PORT || 5000;
 
-const candidates_routes = require("./routes/candidates");
-const hr_routes = require("./routes/hr");
-const admin_routes = require("./routes/admin");
+// Middleware
+app.use(express.json());
 
-app.get("/",(req,res)=>{
-    res.send("Server Connected")
-}); 
+// Routes
+app.use('/api/user', userRoutes); // Corrected to include leading slash
+app.use('/api/candidate', candidateRoutes);
 
+// Root route
+app.get('/', (req, res) => {
+    res.send('Job Portal API is running...');
+});
 
-app.use("/api/candidates", candidates_routes); 
-// because of app.use() middlewares run only at initial stage and subsequents requests are getting skipped
-app.use("/api/hr", hr_routes); 
-app.use('/api/admin', admin_routes);
-
+// Start server
 const start = async () => {
-    try{
-        await connectDB(process.env.MONGODB_URL); // server will start only after a successful db connection
-        app.listen(PORT, () =>{
-           console.log(` Connected server at ${PORT}`);
-        })
+    try {
+        await connectDB(process.env.MONGODB_URL); // Connect to MongoDB
+        app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    } catch (error) {
+        console.error('Error starting server:', error.message);
     }
-    catch(error){
-        console.log(error)
-    } 
 };
 
 start();
