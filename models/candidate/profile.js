@@ -21,7 +21,7 @@ const ProfileSchema = new mongoose.Schema(
       immutable: true, // Email should not be editable once set
     },
     dob: {
-      type: Date,
+      type: String,
       required: true,
     },
     marks: {

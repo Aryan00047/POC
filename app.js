@@ -3,6 +3,7 @@ const express = require('express');
 const connectDB = require('./db/connect');
 const candidateRoutes = require('./routes/candidates');
 const userRoutes = require('./routes/user');
+const hrRoutes = require('./routes/hr')
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -13,6 +14,7 @@ app.use(express.json());
 // Routes
 app.use('/api/user', userRoutes); // Corrected to include leading slash
 app.use('/api/candidate', candidateRoutes);
+app.use('/api/hr', hrRoutes);
 
 // Root route
 app.get('/', (req, res) => {

@@ -1,26 +1,24 @@
 const express = require('express');
-const router = express.Router();
 const { protectRoute } = require('../middleware/authMiddleware');
 const hrController = require('../controllers/hrController');
+const router = express.Router();
 
 console.log("Hr routes accessed")
 
 // Route for posting a job (only if logged in and hrId is provided in the route)
-router.post('/postJob', protectRoute['hr'], hrController.postJob);
+router.post('/postJob', protectRoute(['hr']), hrController.postJob);
 
-// // Route for fetching all candidates (HR must be authenticated)
-// router.get('/candidates', authMiddleware.verifyTokenHR, hrController.fetchCandidates);
+// Route for fetching all candidates (HR must be authenticated)
+router.get('/candidates', protectRoute(['hr']), hrController.fetchCandidates);
 
-// // Route for fetching candidate profile by email
-// router.get('/candidates/email/:email', authMiddleware.verifyTokenHR, hrController.fetchCandidateProfile);
+// Route for fetching candidate profile by email
+ router.get('/candidates/email/:email', protectRoute(['hr']) , hrController.fetchCandidateProfile);
 
-// // Route for downloading a candidate's resume (HR must be authenticated)
-// router.get('/resume/email/:email', authMiddleware.verifyTokenHR, hrController.downloadResumeHR);
+// Route for downloading a candidate's resume (HR must be authenticated)
+router.get('/resume/email/:email', protectRoute(['hr']), hrController.downloadResumeHR);
 
-// //Route for job applications
-// router.get('/jobApplications/:jobId', authMiddleware.verifyTokenHR, hrController.getJobApplications);
+router.get('/applications/:jobId', hrController.getApplicationsByJobId);
 
-// //Route for selecting candidates
-// router.post('/selectCandidates/email/:email', authMiddleware.verifyTokenHR, hrController.selectCandidateForInterview)
+router.patch('/applications/:applicationId/status', protectRoute(['hr']), hrController.updateApplicationStatus);
 
 module.exports = router;

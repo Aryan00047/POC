@@ -1,11 +1,15 @@
 const express = require('express');
 const { protectRoute } = require('../middleware/authMiddleware');
-const { updateOrCreateProfile, getProfile } = require('../controllers/candidateController');
+const candidateController = require('../controllers/candidateController');
 const upload = require('../middleware/uploadMiddleware'); 
 const router = express.Router();
 
 // Routes to handle candidate profile actions
-router.post('/profile', protectRoute(['candidate']), upload.single('resume'), updateOrCreateProfile);
-router.get('/profile', protectRoute(['candidate']), getProfile);
+router.post('/profile', protectRoute(['candidate']), upload.single('resume'), candidateController.updateOrCreateProfile);
+router.get('/profile', protectRoute(['candidate']), candidateController.getProfile);
+router.get('/jobs', protectRoute(['candidate']), candidateController.fetchAvailableJobs);
+router.post('/apply/:jobId', protectRoute(['candidate']), candidateController.applyForJob);
+router.get('/applications', protectRoute(['candidate']), candidateController.viewCandidateApplications);
+
 
 module.exports = router;

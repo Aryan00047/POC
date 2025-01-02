@@ -1,44 +1,54 @@
 const mongoose = require('mongoose');
 
 const applicationSchema = new mongoose.Schema({
-    candidateId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Register',  // Reference to the candidate model
-        required: true
-    },
-    jobId: {
-        type: Number,// need to do this because mongoose expects object id othwerwise
-        ref: 'Job',  // Reference to the job model
-        required: true
-    },
-    name: {
-        type: String,
-        required: true 
-    },
-    email: {
-        type: String,
-        required: true  
-    },
-    skills: {
-        type: [String], 
-        required: true
-    },
-    resume: {
-        type: String,  // Path or URL to resume file
-        required: true
-    },
-    workExperience: {
-        type: String,  
-        required: true
-    },
-    isSelected: {
-        type: Boolean,
-        default: false
-    },
-    appliedAt: {
-        type: Date,
-        default: Date.now  
-    }
+  applicationId: {
+    type: Number,
+    unique: true,
+    required: true,
+  },
+  candidateId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+  jobId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Job',
+    required: true,
+  },
+  numericJobId: {
+    type: Number, // Store the numeric jobId for querying in the HR portal
+    required: true,
+  },
+  skills: {
+    type: [String],
+    required: true,
+  },
+  resume: {
+    type: String,
+    required: true,
+  },
+  workExperience: {
+    type: String,
+    required: true,
+  },
+  isSelected: {
+    type: Boolean,
+    default: false,
+  },
+  appliedAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+// Pre-validate hook to generate applicationId
+applicationSchema.pre('validate', async function (next) {
+  if (!this.applicationId) {
+    const lastApplication = await this.constructor.findOne().sort({ applicationId: -1 });
+    this.applicationId = lastApplication ? lastApplication.applicationId + 1 : 101;
+  }
+  next();
 });
 
 module.exports = mongoose.model('Application', applicationSchema);
