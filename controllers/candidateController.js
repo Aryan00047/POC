@@ -125,37 +125,63 @@ const applyForJob = async (req, res) => {
   try {
     const { jobId } = req.params; // Job ID from route params
     const candidateId = req.user.userId; // Candidate ID from JWT token
+
+    // Validate numeric jobId
     const numericJobId = parseInt(jobId, 10);
     if (isNaN(numericJobId)) {
       return res.status(400).json({ error: 'Invalid jobId format. Must be a number.' });
     }
-    
+
+    // Fetch the job details
     const job = await Job.findOne({ jobId: numericJobId });
     if (!job) {
       return res.status(404).json({ error: 'Job not found' });
     }
-    
+
+    // Fetch the candidate's profile
     const profile = await Profile.findOne({ candidate_id: candidateId });
     if (!profile) {
-      return res.status(404).json({ error: 'Profile not found. Please update your profile before applying.' });
+      return res.status(404).json({
+        error: 'Profile not found. Please update your profile before applying.',
+      });
     }
-    
-    const newApplication = new Application({
-      jobId: job._id,  // Reference to the ObjectId of Job
-      numericJobId: job.jobId, // Store the numeric jobId
+
+    // Check for duplicate application
+    const existingApplication = await Application.findOne({
       candidateId,
+      jobId: job._id,
+    });
+    if (existingApplication) {
+      return res.status(400).json({
+        error: 'You have already applied for this job.',
+      });
+    }
+
+    // Create and save the new application
+    const newApplication = new Application({
+      jobId: job._id, // Reference to the ObjectId of Job
+      numericJobId: job.jobId, // Store the numeric jobId
+      candidateId, // Reference to the candidate's ObjectId
       name: profile.name,
       email: profile.email,
       skills: profile.skills,
       resume: profile.resume,
       workExperience: profile.workExperience,
     });
-    
+
     await newApplication.save();
-    res.status(201).json({ message: 'Application submitted successfully', application: newApplication });
+
+    // Respond with the created application
+    res.status(201).json({
+      message: 'Application submitted successfully',
+      application: newApplication,
+    });
   } catch (error) {
     console.error('Error applying for job:', error.message);
-    res.status(500).json({ error: 'Server error', details: error.message });
+    res.status(500).json({
+      error: 'Server error',
+      details: error.message,
+    });
   }
 };
 
