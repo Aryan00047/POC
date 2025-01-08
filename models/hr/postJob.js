@@ -11,6 +11,14 @@ const jobSchema = new mongoose.Schema({
     ref: 'HR', // Referencing HR model
     required: true,
   },
+  email: {
+    type: String,
+    required: true
+  },
+  name:{
+    type: String,
+    required:true
+  },
   company: {
     type: String,
     required: true,

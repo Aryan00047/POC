@@ -5,6 +5,7 @@ const User = require('../models/userSchema'); // Assuming you have the User mode
 const Application = require('../models/candidate/application'); // Assuming Application model
 const Job = require('../models/hr/postJob'); // Assuming you have a Job model
 const mongoose = require('mongoose')
+const transporter = require('../middleware/emailTransporter');
 
 // Function to handle the profile update or creation
 const updateOrCreateProfile = async (req, res) => {
@@ -119,8 +120,6 @@ const fetchAvailableJobs = async (req, res) => {
   }
 };
 
-// Apply for a job
-
 const applyForJob = async (req, res) => {
   try {
     const { jobId } = req.params; // Job ID from route params
@@ -136,6 +135,12 @@ const applyForJob = async (req, res) => {
     const job = await Job.findOne({ jobId: numericJobId });
     if (!job) {
       return res.status(404).json({ error: 'Job not found' });
+    }
+
+    // Fetch HR's email from the User model
+    const hr = await User.findById(job.hrId);
+    if (!hr || hr.role !== 'hr') {
+      return res.status(404).json({ error: 'HR associated with this job not found.' });
     }
 
     // Fetch the candidate's profile
@@ -159,9 +164,9 @@ const applyForJob = async (req, res) => {
 
     // Create and save the new application
     const newApplication = new Application({
-      jobId: job._id, // Reference to the ObjectId of Job
-      numericJobId: job.jobId, // Store the numeric jobId
-      candidateId, // Reference to the candidate's ObjectId
+      jobId: job._id,
+      numericJobId: job.jobId,
+      candidateId,
       name: profile.name,
       email: profile.email,
       skills: profile.skills,
@@ -171,9 +176,41 @@ const applyForJob = async (req, res) => {
 
     await newApplication.save();
 
-    // Respond with the created application
+    // Prepare email template
+    const emailTemplate = `
+      <h1>New Job Application Received</h1>
+      <p>Dear ${hr.name},</p>
+      <p>A new candidate has applied for the job position <strong>${job.designation}</strong> at <strong>${job.company}</strong>.</p>
+      <p><strong>Candidate Details:</strong></p>
+      <ul>
+        <li><strong>Name:</strong> ${profile.name}</li>
+        <li><strong>Email:</strong> ${profile.email}</li>
+        <li><strong>Skills:</strong> ${profile.skills.join(', ')}</li>
+        <li><strong>Work Experience:</strong> ${profile.workExperience}</li>
+      </ul>
+      <p>The candidate's resume is attached for your review.</p>
+      <p>Best regards,<br>Job Portal Team</p>
+    `;
+
+    // Send email to HR
+    const mailOptions = {
+      from: 'your-email@example.com',
+      to: hr.email, // Dynamically fetched HR email
+      subject: `New Application for Job ID: ${job.jobId}`,
+      html: emailTemplate, // Use HTML email template
+      attachments: [
+        {
+          filename: 'resume.pdf',
+          path: profile.resume, // Attach candidate's resume
+        },
+      ],
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent to HR:', info.response);
+
     res.status(201).json({
-      message: 'Application submitted successfully',
+      message: 'Application submitted successfully, and HR notified.',
       application: newApplication,
     });
   } catch (error) {

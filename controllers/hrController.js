@@ -3,9 +3,9 @@ const User = require('../models/userSchema');
 const CandidateProfile = require('../models/candidate/profile');
 const Application = require('../models/candidate/application')
 const path = require('path');
-const nodemailer = require('nodemailer');
 const fs = require('fs').promises; // Use the promises API
 const mongoose = require('mongoose');
+const transporter = require('../middleware/emailTransporter');
 
 // Function to post a new job listing
 const postJob = async (req, res) => {
@@ -231,101 +231,90 @@ const getApplicationsByJobId = async (req, res) => {
   
 // Mark candidate as selected for interview
 const updateApplicationStatus = async (req, res) => {
-  const { applicationId } = req.params; // Extracting applicationId from URL params
-  const { isSelected } = req.body; // Extracting isSelected from request body
+  const { applicationId } = req.params;
+  const { isSelected } = req.body;
 
   try {
-    // Validate if applicationId is a valid number
+    // Validate applicationId
     if (isNaN(applicationId)) {
       return res.status(400).json({ message: 'Invalid applicationId format. Must be a number.' });
     }
-
-    // Log the incoming isSelected value for debugging purposes
-    console.log('Incoming isSelected value:', isSelected);
 
     // Validate isSelected value
     if (typeof isSelected !== 'boolean') {
       return res.status(400).json({ message: 'Invalid isSelected value. Must be "true" or "false".' });
     }
 
-    // Find and update the application using numeric applicationId
+    // Find the application and populate candidateId to get email
     const updatedApplication = await Application.findOneAndUpdate(
-      { applicationId: parseInt(applicationId, 10) }, // Use numeric applicationId in query
+      { applicationId: parseInt(applicationId, 10) },
       { isSelected },
       { new: true }
-    );
+    ).populate('candidateId', 'email name'); // This will populate email and name from the User model
 
     if (!updatedApplication) {
       return res.status(404).json({ message: 'Application not found.' });
     }
 
+    // Get the candidate's email from the populated data
+    const candidateEmail = updatedApplication.candidateId?.email;
+
+    if (!candidateEmail) {
+      return res.status(400).json({ message: 'Candidate email not found. Cannot send notification.' });
+    }
+
+    // Prepare the email subject and body based on selection status
+    const emailSubject = isSelected ? 'Congratulations! You have been selected.' : 'Application Status Update';
+
+    // Email Templates
+    const emailTemplate = {
+      selected: `
+        <html>
+          <body>
+            <h1>Congratulations, ${updatedApplication.candidateId.name}!</h1>
+            <p>We are pleased to inform you that you have been selected for the job you applied for.</p>
+            <p>Please expect further communication regarding the next steps.</p>
+            <br>
+            <p>Best regards,</p>
+            <p>Your HR Team</p>
+          </body>
+        </html>`,
+      
+      rejected: `
+        <html>
+          <body>
+            <h1>Dear ${updatedApplication.candidateId.name},</h1>
+            <p>We regret to inform you that your application for the job has not been successful.</p>
+            <p>Thank you for your time and interest in the position. We encourage you to apply again in the future.</p>
+            <br>
+            <p>Best regards,</p>
+            <p>Your HR Team</p>
+          </body>
+        </html>`
+    };
+
+    // Select the appropriate email template based on the isSelected status
+    const emailHtml = isSelected ? emailTemplate.selected : emailTemplate.rejected;
+
+    // Send email using the email transporter
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER, // Your HR email address
+      to: candidateEmail,
+      subject: emailSubject,
+      html: emailHtml, // Use HTML email body
+    });
+
+    // Respond with a success message
     res.status(200).json({
-      message: 'Application status (isSelected) updated successfully.',
+      message: `Application status updated and notification sent to ${candidateEmail}.`,
       application: updatedApplication,
     });
+
   } catch (error) {
     console.error('Error updating application status:', error);
-    res.status(500).json({
-      message: 'Error updating application status',
-      error: error.message,
-    });
+    res.status(500).json({ message: 'Error updating application status', error: error.message });
   }
 };
-
-// const selectCandidateForInterview = async (req, res) => {
-//     const { jobId } = req.body;
-//     const candidateEmail = req.params.email; // no need to destructure
-  
-//     try {
-
-//     console.log("Checking for candidate email:", candidateEmail);
-//     console.log("Checking for job ID:", jobId);
-//       // Check if the candidate has applied for the job
-//       const application = await Application.findOne({ email: candidateEmail, jobId: jobId });
-//       if (!application) {
-//         return res.status(404).json({ message: 'Candidate has not applied for this job' });
-//       }
-  
-//       // Mark candidate as selected
-//       application.isSelected = true; // Correct field name
-//       await application.save();
-  
-//       // Fetch candidate details
-//       const candidate = await Candidate.findOne({ email: candidateEmail });
-//       if (!candidate) {
-//         return res.status(404).json({ message: 'Candidate not found' });
-//       }
-  
-//       // Send email to the candidate
-//       const transporter = nodemailer.createTransport({
-//         service: 'gmail',
-//         auth: {
-//           user: process.env.EMAIL_USER,
-//           pass: process.env.EMAIL_PASSWORD,
-//         },
-//       });
-  
-//       const mailOptions = {
-//         from: process.env.EMAIL_USER,
-//         to: candidate.email,
-//         subject: `Interview Selection for Job ID: ${jobId}`,
-//         text: `Dear ${candidate.name},\n\nCongratulations! You have been selected for an interview for the job you applied for (Job ID: ${jobId}).\n\nBest regards,\nYour Recruitment Team`,
-//       };
-  
-//       transporter.sendMail(mailOptions, (error, info) => {
-//         if (error) {
-//           console.error('Error sending email:', error);
-//           return res.status(500).json({ message: 'Error sending email', error });
-//         } else {
-//           console.log('Email sent:', info.response);
-//           return res.status(200).json({ message: 'Candidate selected for interview and email sent' });
-//         }
-//       });
-  
-//     } catch (error) {
-//       return res.status(500).json({ message: 'Server error', error: error.message });
-//     }
-//   };
 
   module.exports = { 
     postJob,
