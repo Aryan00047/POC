@@ -17,8 +17,9 @@ router.get('/candidates', protectRoute(['hr']), hrController.fetchCandidates);
 // Route for downloading a candidate's resume (HR must be authenticated)
 router.get('/resume/email/:email', protectRoute(['hr']), hrController.downloadResumeHR);
 
-router.get('/applications/:jobId', hrController.getApplicationsByJobId);
+router.get('/applications/:jobId', protectRoute(['hr']), hrController.getApplicationsByJobId);
 
 router.patch('/applications/:applicationId/status', protectRoute(['hr']), hrController.updateApplicationStatus);
+router.delete('/profile', protectRoute(['hr']), hrController.deleteHrProfile);
 
 module.exports = router;

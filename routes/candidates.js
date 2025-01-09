@@ -10,6 +10,6 @@ router.get('/profile', protectRoute(['candidate']), candidateController.getProfi
 router.get('/jobs', protectRoute(['candidate']), candidateController.fetchAvailableJobs);
 router.post('/apply/:jobId', protectRoute(['candidate']), candidateController.applyForJob);
 router.get('/applications', protectRoute(['candidate']), candidateController.viewCandidateApplications);
-
+router.delete('/profile', protectRoute(['candidate']), candidateController.deleteCandidateProfile);
 
 module.exports = router;

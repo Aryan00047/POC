@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs').promises; // Use the promises API
 const mongoose = require('mongoose');
 const transporter = require('../middleware/emailTransporter');
+const { selectEmailTemplate, rejectEmailTemplate } = require('../middleware/emailTemplates');
 
 // Function to post a new job listing
 const postJob = async (req, res) => {
@@ -189,7 +190,6 @@ const downloadResumeHR = async (req, res) => {
 };
 
 //get job applications
-
 const getApplicationsByJobId = async (req, res) => {
   try {
     const { jobId } = req.params;
@@ -211,8 +211,13 @@ const getApplicationsByJobId = async (req, res) => {
       });
     }
 
+    // Fetch applications and populate both candidate and job details
     const applications = await Application.find(query)
       .populate('candidateId', 'name email skills') // Populate candidate details
+      .populate({
+        path: 'jobId', // Populate job details
+        select: 'designation company jobDescription experienceRequired package', // Select relevant job fields
+      })
       .exec();
 
     if (!applications || applications.length === 0) {
@@ -228,6 +233,7 @@ const getApplicationsByJobId = async (req, res) => {
     res.status(500).json({ error: 'Server error', details: error.message });
   }
 };
+
   
 // Mark candidate as selected for interview
 const updateApplicationStatus = async (req, res) => {
@@ -235,84 +241,80 @@ const updateApplicationStatus = async (req, res) => {
   const { isSelected } = req.body;
 
   try {
-    // Validate applicationId
+    // Validate applicationId and isSelected value
     if (isNaN(applicationId)) {
       return res.status(400).json({ message: 'Invalid applicationId format. Must be a number.' });
     }
-
-    // Validate isSelected value
     if (typeof isSelected !== 'boolean') {
       return res.status(400).json({ message: 'Invalid isSelected value. Must be "true" or "false".' });
     }
 
-    // Find the application and populate candidateId to get email
-    const updatedApplication = await Application.findOneAndUpdate(
-      { applicationId: parseInt(applicationId, 10) },
-      { isSelected },
-      { new: true }
-    ).populate('candidateId', 'email name'); // This will populate email and name from the User model
-
-    if (!updatedApplication) {
+    // Find the application by applicationId
+    const application = await Application.findOne({ applicationId });
+    if (!application) {
       return res.status(404).json({ message: 'Application not found.' });
     }
 
-    // Get the candidate's email from the populated data
-    const candidateEmail = updatedApplication.candidateId?.email;
-
-    if (!candidateEmail) {
-      return res.status(400).json({ message: 'Candidate email not found. Cannot send notification.' });
+    // Fetch job details using jobId
+    const job = await Job.findById(application.jobId).select('company designation jobDescription package');
+    if (!job) {
+      return res.status(404).json({ message: 'Job details not found.' });
     }
 
-    // Prepare the email subject and body based on selection status
-    const emailSubject = isSelected ? 'Congratulations! You have been selected.' : 'Application Status Update';
+    // Fetch candidate details
+    const candidate = await User.findById(application.candidateId).select('name email');
 
-    // Email Templates
-    const emailTemplate = {
-      selected: `
-        <html>
-          <body>
-            <h1>Congratulations, ${updatedApplication.candidateId.name}!</h1>
-            <p>We are pleased to inform you that you have been selected for the job you applied for.</p>
-            <p>Please expect further communication regarding the next steps.</p>
-            <br>
-            <p>Best regards,</p>
-            <p>Your HR Team</p>
-          </body>
-        </html>`,
-      
-      rejected: `
-        <html>
-          <body>
-            <h1>Dear ${updatedApplication.candidateId.name},</h1>
-            <p>We regret to inform you that your application for the job has not been successful.</p>
-            <p>Thank you for your time and interest in the position. We encourage you to apply again in the future.</p>
-            <br>
-            <p>Best regards,</p>
-            <p>Your HR Team</p>
-          </body>
-        </html>`
+    // Update the application status
+    application.isSelected = isSelected;
+    await application.save();
+
+    // Send email based on selection status
+    const emailTemplate = isSelected
+      ? selectEmailTemplate(candidate, job)
+      : rejectEmailTemplate(candidate, job);
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: candidate.email,
+      subject: isSelected ? 'Congratulations! You are selected for the job' : 'Job Application Status',
+      html: emailTemplate,
     };
 
-    // Select the appropriate email template based on the isSelected status
-    const emailHtml = isSelected ? emailTemplate.selected : emailTemplate.rejected;
+    // Send the email
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Email sent to Candidate:", info.response);
 
-    // Send email using the email transporter
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER, // Your HR email address
-      to: candidateEmail,
-      subject: emailSubject,
-      html: emailHtml, // Use HTML email body
-    });
-
-    // Respond with a success message
     res.status(200).json({
-      message: `Application status updated and notification sent to ${candidateEmail}.`,
-      application: updatedApplication,
+      message: isSelected ? 'Candidate selected and email sent.' : 'Candidate rejected and email sent.',
+      application,
     });
 
   } catch (error) {
-    console.error('Error updating application status:', error);
+    console.error('Error updating application status and sending email:', error);
     res.status(500).json({ message: 'Error updating application status', error: error.message });
+  }
+};
+
+const deleteHrProfile = async (req, res) => {
+  try {
+    const hrId = req.user.userId; // Extract HR ID from the authenticated user
+
+    // Delete all jobs created by the HR
+    await Job.deleteMany({ hrId });
+
+    // Delete the HR user record
+    const deletedHr = await User.findOneAndDelete({ _id: hrId });
+
+    if (!deletedHr) {
+      return res.status(404).json({ message: 'HR account not found.' });
+    }
+
+    res.status(200).json({
+      message: 'HR account and associated jobs deleted successfully.',
+    });
+  } catch (error) {
+    console.error('Error deleting HR profile and account:', error.message);
+    res.status(500).json({ message: 'Server error', details: error.message });
   }
 };
 
@@ -322,5 +324,6 @@ const updateApplicationStatus = async (req, res) => {
     fetchCandidateProfile,
     downloadResumeHR,
     getApplicationsByJobId,
-    updateApplicationStatus
+    updateApplicationStatus,
+    deleteHrProfile
   };

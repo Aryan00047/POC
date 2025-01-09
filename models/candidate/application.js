@@ -13,7 +13,7 @@ const applicationSchema = new mongoose.Schema({
   },
   jobId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Job',
+    ref: 'Job', // Referencing Job model to get job details
     required: true,
   },
   numericJobId: {
@@ -50,5 +50,10 @@ applicationSchema.pre('validate', async function (next) {
   }
   next();
 });
+
+// Populating the job details when fetching applications
+applicationSchema.methods.populateJobDetails = function () {
+  return this.populate('jobId', 'designation jobDescription experienceRequired package');
+};
 
 module.exports = mongoose.model('Application', applicationSchema);
