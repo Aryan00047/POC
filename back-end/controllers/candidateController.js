@@ -6,6 +6,7 @@ const Application = require('../models/candidate/application'); // Assuming Appl
 const Job = require('../models/hr/postJob'); // Assuming you have a Job model
 const mongoose = require('mongoose')
 const transporter = require('../middleware/emailTransporter');
+const {newApplicationEmailTemplate} = require('../middleware/emailTemplates')
 
 // Function to handle the profile update or creation
 const updateOrCreateProfile = async (req, res) => {
@@ -177,20 +178,7 @@ const applyForJob = async (req, res) => {
     await newApplication.save();
 
     // Prepare email template
-    const emailTemplate = `
-      <h1>New Job Application Received</h1>
-      <p>Dear ${hr.name},</p>
-      <p>A new candidate has applied for the job position <strong>${job.designation}</strong> at <strong>${job.company}</strong>.</p>
-      <p><strong>Candidate Details:</strong></p>
-      <ul>
-        <li><strong>Name:</strong> ${profile.name}</li>
-        <li><strong>Email:</strong> ${profile.email}</li>
-        <li><strong>Skills:</strong> ${profile.skills.join(', ')}</li>
-        <li><strong>Work Experience:</strong> ${profile.workExperience}</li>
-      </ul>
-      <p>The candidate's resume is attached for your review.</p>
-      <p>Best regards,<br>Job Portal Team</p>
-    `;
+    const emailTemplate = newApplicationEmailTemplate(hr,job,profile)
 
     // Send email to HR
     const mailOptions = {
@@ -242,10 +230,11 @@ const viewCandidateApplications = async (req, res) => {
     // Fetch all applications submitted by the candidate and populate job details
     const applications = await Application.find({ candidateId: objectId })
       .populate({
-        path: 'jobId',  // Ensure we're populating jobId correctly
-        select: 'designation company',  // Only select the relevant fields from Job
+        path: 'jobId',  // Populate the job details
+        select: 'designation company jobDescription experienceRequired package',  // Select relevant job fields
         match: { _id: { $exists: true } }  // Ensure the jobId is valid
-      });
+      })
+      .populate('candidateId', 'name email');  // Optional: Populate candidate details (name, email)
 
     if (!applications || applications.length === 0) {
       return res.status(404).json({ message: 'No applications found.' });
@@ -261,11 +250,42 @@ const viewCandidateApplications = async (req, res) => {
   }
 };
 
+// Delete Candidate Profile and Applications
+const deleteCandidateProfile = async (req, res) => {
+  try {
+    const candidateId = req.user.userId; // Get the candidateId from the authenticated user
+
+    // Delete all applications for the candidate
+    await Application.deleteMany({ candidateId });
+
+    // Attempt to delete the candidate's profile (if it exists)
+    const deletedProfile = await Profile.findOneAndDelete({ candidate_id: candidateId });
+
+    if (!deletedProfile) {
+      console.warn('Candidate profile not found. Proceeding to delete user account.');
+    }
+
+    // Delete the user record from the User collection
+    const deletedUser = await User.findOneAndDelete({ _id: candidateId });
+
+    if (!deletedUser) {
+      return res.status(404).json({ message: 'User account not found.' });
+    }
+
+    res.status(200).json({
+      message: 'Candidate account, associated applications, and profile (if any) deleted successfully.',
+    });
+  } catch (error) {
+    console.error('Error deleting candidate profile and user:', error.message);
+    res.status(500).json({ message: 'Server error', details: error.message });
+  }
+};
 
 module.exports = {
   updateOrCreateProfile,
   getProfile,
   fetchAvailableJobs,
   applyForJob,
-  viewCandidateApplications
+  viewCandidateApplications,
+  deleteCandidateProfile
 };
