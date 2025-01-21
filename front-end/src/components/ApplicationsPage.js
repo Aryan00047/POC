@@ -1,32 +1,71 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 
-const ViewApplications = () => {
-  const [applications, setApplications] = useState([]);
+const ApplicationsPage = () => {
+  const [applications, setApplications] = useState([]); // State to store applications
+  const [loading, setLoading] = useState(true); // State to track loading
+  const [error, setError] = useState(null); // State to store errors
 
+  // Fetch candidate applications from the API
   useEffect(() => {
-    // Fetch candidate's applications
-    fetch("/api/candidate/viewApplications")
-      .then((response) => response.json())
-      .then((data) => setApplications(data.applications))
-      .catch((error) => console.error("Error fetching applications:", error));
+    const fetchApplications = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setError("Please log in first.");
+          setLoading(false);
+          return;
+        }
+
+        const response = await axios.get("/api/candidate/applications", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        setApplications(response.data.applications); // Set applications data
+      } catch (err) {
+        console.error("Error fetching applications:", err);
+        setError("Failed to fetch applications. Please try again later.");
+      } finally {
+        setLoading(false); // Set loading to false
+      }
+    };
+
+    fetchApplications();
   }, []);
 
-  if (applications.length === 0) return <div>No applications found.</div>;
+  // Render loading state
+  if (loading) {
+    return <div>Loading applications...</div>;
+  }
 
+  // Render error state
+  if (error) {
+    return <div>{error}</div>;
+  }
+
+  // Render when no applications are available
+  if (applications.length === 0) {
+    return <div>No applications found.</div>;
+  }
+
+  // Render applications list
   return (
     <div>
       <h2>Your Applications</h2>
-      <ul>
-        {applications.map((application) => (
-          <li key={application._id}>
-            <h3>{application.jobId.designation}</h3>
-            <p>{application.jobId.company}</p>
-            <p>Status: {application.status}</p>
-          </li>
-        ))}
-      </ul>
+      {applications.map((application) => (
+        <div key={application._id} className="application-card">
+          <h3>{application.jobId.designation}</h3>
+          <p>Company: {application.jobId.company}</p>
+          <p>Description: {application.jobId.jobDescription}</p>
+          <p>Experience Required: {application.jobId.experienceRequired}</p>
+          <p>Package: {application.jobId.package}</p>
+          <p>Status: {application.status || "Pending"}</p>
+        </div>
+      ))}
     </div>
   );
 };
 
-export default ViewApplications;
+export default ApplicationsPage;
