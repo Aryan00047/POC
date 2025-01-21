@@ -17,7 +17,6 @@ const Register = () => {
     setSuccess(""); // Clear previous success messages
 
     try {
-      // Make a POST request to the register endpoint
       const response = await axios.post("/api/user/register", {
         name,
         email,

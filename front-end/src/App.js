@@ -31,10 +31,10 @@ const PrivateRoute = ({ element, requiredRole }) => {
 
 function App() {
   return (
-    <Router>
+    <Router>{/*wraps application and provides routing capablities*/}
       <div>
-        <Routes>
-          <Route path="/" element={<Homepage />} />
+        <Routes>{/*A wrapper for all the route components*/ }
+          <Route path="/" element={<Homepage />} />{/*Redirects the user to another route programmatically*/}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
