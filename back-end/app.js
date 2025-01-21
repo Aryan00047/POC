@@ -17,7 +17,6 @@ app.use(
     credentials: true,
   })
 )
-// Middleware
 app.use(express.json());
 
 // Routes

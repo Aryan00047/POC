@@ -15,6 +15,7 @@ const postJob = async (req, res) => {
   
     // Check if user is authorized (assuming 'hr' role is required)
     if (req.user.role !== 'hr') {
+      console.log("You must be HR to access this...")
       return res.status(403).json({ message: 'Access denied. Not an HR.' });
     }
   
@@ -42,6 +43,7 @@ const postJob = async (req, res) => {
 
 
       const savedJob = await newJob.save();
+      console.log("Job posted successfully...", savedJob)
       res.status(201).json({ message: 'Job posted successfully', job: savedJob });
     } catch (error) {
       console.error("Error posting job:", error);
@@ -56,6 +58,7 @@ const fetchCandidates = async (req, res) => {
     try {
         // Check if the user is authorized (assuming only 'hr' can access this endpoint)
         if (req.user.role !== 'hr') {
+          console.log("You must be HR to access this...")
             return res.status(403).json({ message: 'Access denied. Not an HR.' });
         }
 
@@ -84,6 +87,7 @@ const fetchCandidates = async (req, res) => {
             })
         );
 
+        console.log("You must be HR to access this...")
         res.status(200).json({
             message: 'Candidates fetched successfully',
             candidates: candidatesWithProfiles,
@@ -107,10 +111,12 @@ const fetchCandidateProfile = async (req, res) => {
 
       // Check if the profile exists
       if (!profile) {
-          return res.status(404).json({ message: 'Candidate profile not found' });
+        console.log("Candidate's profile not found...")
+        return res.status(404).json({ message: 'Candidate profile not found' });
       }
 
       // Send full profile information in the response
+      console.log("Candidate's profile fetched successfully: ", profile)
       res.status(200).json({
           message: 'Candidate profile fetched successfully',
           profile: {
@@ -140,18 +146,21 @@ const downloadResumeHR = async (req, res) => {
   try {
       // Verify if the user making the request has the 'hr' role
       if (req.user.role !== 'hr') {
-          return res.status(403).json({ message: 'Access denied. Only HR can download resumes.' });
+        console.log("You must be HR to download resume...")
+        return res.status(403).json({ message: 'Access denied. Only HR can download resumes.' });
       }
 
       // Find the candidate using the email in the User model
       const candidate = await User.findOne({ email, role: 'candidate' });
       if (!candidate) {
+          console.log("Candidate not found...")
           return res.status(404).json({ message: 'Candidate not found.' });
       }
 
       // Fetch the candidate's profile using the candidate's ID
       const profile = await CandidateProfile.findOne({ candidate_id: candidate._id });
       if (!profile || !profile.resume) {
+          console.log("Resume not found...")
           return res.status(404).json({ message: 'Resume not found for this candidate.' });
       }
 
@@ -162,6 +171,7 @@ const downloadResumeHR = async (req, res) => {
       try {
           await fs.access(resumePath); // Check if the file exists
       } catch {
+          console.log("Resume file not found on the server...")
           return res.status(404).json({ message: 'Resume file not found on the server.' });
       }
 
@@ -179,6 +189,7 @@ const downloadResumeHR = async (req, res) => {
       await fs.copyFile(resumePath, destinationPath);
 
       // Send response indicating that the resume is saved in the downloads directory
+      console.log("Resume file downloaded successfully")
       res.status(200).json({
           message: 'Resume downloaded and stored in the downloads directory successfully',
           downloadPath: destinationPath,
@@ -206,6 +217,7 @@ const getApplicationsByJobId = async (req, res) => {
       // ObjectId jobId: query by the jobId ObjectId field
       query = { jobId: mongoose.Types.ObjectId(jobId) };
     } else {
+      console.log("Invalid jobId format. Must be a number or a valid ObjectId.")
       return res.status(400).json({
         error: 'Invalid jobId format. Must be a number or a valid ObjectId.',
       });
@@ -221,9 +233,11 @@ const getApplicationsByJobId = async (req, res) => {
       .exec();
 
     if (!applications || applications.length === 0) {
+      console.log("No applications found for this job...")
       return res.status(404).json({ message: 'No applications found for this job.' });
     }
 
+    console.log("Applications fetched successfully...")
     res.status(200).json({
       message: 'Applications fetched successfully.',
       applications,
@@ -243,21 +257,25 @@ const updateApplicationStatus = async (req, res) => {
   try {
     // Validate applicationId and isSelected value
     if (isNaN(applicationId)) {
+      console.log("Invalid applicationId format. Must be a number.")
       return res.status(400).json({ message: 'Invalid applicationId format. Must be a number.' });
     }
     if (typeof isSelected !== 'boolean') {
+      console.log("Invalid isSelected value. Must be 'true' or 'false'.")
       return res.status(400).json({ message: 'Invalid isSelected value. Must be "true" or "false".' });
     }
 
     // Find the application by applicationId
     const application = await Application.findOne({ applicationId });
     if (!application) {
+      console.log("Application  not found...")
       return res.status(404).json({ message: 'Application not found.' });
     }
 
     // Fetch job details using jobId
     const job = await Job.findById(application.jobId).select('company designation jobDescription package');
     if (!job) {
+      console.log("Job details not found...")
       return res.status(404).json({ message: 'Job details not found.' });
     }
 
@@ -284,6 +302,7 @@ const updateApplicationStatus = async (req, res) => {
     const info = await transporter.sendMail(mailOptions);
     console.log("Email sent to Candidate:", info.response);
 
+    console.log("Candidate selected and email sent.' : 'Candidate rejected and email sent. ", application)
     res.status(200).json({
       message: isSelected ? 'Candidate selected and email sent.' : 'Candidate rejected and email sent.',
       application,
@@ -306,9 +325,11 @@ const deleteHrProfile = async (req, res) => {
     const deletedHr = await User.findOneAndDelete({ _id: hrId });
 
     if (!deletedHr) {
+      console.log("HR account not found....")
       return res.status(404).json({ message: 'HR account not found.' });
     }
 
+    console.log("HR account and associated jobs deleted successfully.")
     res.status(200).json({
       message: 'HR account and associated jobs deleted successfully.',
     });

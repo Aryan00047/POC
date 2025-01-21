@@ -1,36 +1,32 @@
+import React from "react";
 import {
   BrowserRouter as Router,
   Route,
   Routes,
   Navigate,
 } from "react-router-dom";
-import Homepage from "./components/HomePage"; // Import the Homepage
-import Login from "./components/LoginPage";
+import Homepage from "./components/HomePage";
+import Login from "./components/Login";
 import Register from "./components/Register";
 import CandidateDashboard from "./components/CandidateDashboard";
 import AdminDashboard from "./components/AdminDashboard";
 import HrDashboard from "./components/HrDashboard";
-
-// Candidate-related components inside src/components/
 import Profile from "./components/ProfilePage";
 import UpdateProfile from "./components/UpdateProfile";
 import ViewJobs from "./components/JobsPage";
-import ViewApplications from "./components/ApplicationPage";
+import ViewApplications from "./components/ApplicationsPage";
 import DeleteAccount from "./components/DeleteAccountPage";
 
-// Private Route component to handle role-based access
+// PrivateRoute Component to handle role-based redirection
 const PrivateRoute = ({ element, requiredRole }) => {
-  const userRole = localStorage.getItem("role"); // Use correct key for the role
+  const userRole = localStorage.getItem("role"); // Simulate authentication
   if (!userRole) {
-    return <Navigate to="/login" />; // Redirect to login if not logged in
+    return <Navigate to="/login" />;
   }
-
-  // If logged in, check if the role matches the required role
   if (userRole !== requiredRole) {
-    return <Navigate to="/login" />; // Redirect to login if role doesn't match
+    return <Navigate to="/login" />;
   }
-
-  return element; // Allow access to the requested route
+  return element;
 };
 
 function App() {
@@ -38,14 +34,11 @@ function App() {
     <Router>
       <div>
         <Routes>
-          {/* Homepage route - This is where Login and Register links will appear */}
           <Route path="/" element={<Homepage />} />
-
-          {/* Public routes: Login and Register */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          {/* Protected routes */}
+          {/* Candidate Dashboard with Nested Routes */}
           <Route
             path="/candidateDashboard"
             element={
@@ -55,7 +48,7 @@ function App() {
               />
             }
           >
-            {/* Candidate-specific nested routes */}
+            {/* No need for "/" as this will be relative to /candidateDashboard */}
             <Route path="profile" element={<Profile />} />
             <Route path="updateProfile" element={<UpdateProfile />} />
             <Route path="viewJobs" element={<ViewJobs />} />
@@ -63,13 +56,13 @@ function App() {
             <Route path="deleteAccount" element={<DeleteAccount />} />
           </Route>
 
+          {/* Admin and HR Dashboards */}
           <Route
             path="/adminDashboard"
             element={
               <PrivateRoute element={<AdminDashboard />} requiredRole="admin" />
             }
           />
-
           <Route
             path="/hrDashboard"
             element={

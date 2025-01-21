@@ -1,124 +1,117 @@
 import React, { useState } from "react";
 
 const UpdateProfile = () => {
-  const [profileData, setProfileData] = useState({
-    dob: "",
-    marks: "",
-    university: "",
-    skills: "",
-    company: "",
-    designation: "",
-    workExperience: "",
-    working: "",
-  });
+  const [dob, setDob] = useState("");
+  const [marks, setMarks] = useState("");
+  const [university, setUniversity] = useState("");
+  const [skills, setSkills] = useState("");
+  const [company, setCompany] = useState("");
+  const [designation, setDesignation] = useState("");
+  const [workExperience, setWorkExperience] = useState("");
+  const [working, setWorking] = useState("");
+  const [resume, setResume] = useState(null);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setProfileData({
-      ...profileData,
-      [name]: value,
-    });
+  const handleFileChange = (e) => {
+    setResume(e.target.files[0]);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Make API call to update profile
-    fetch("/api/candidate/updateProfile", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(profileData),
-    })
-      .then((response) => response.json())
-      .then((data) => alert(data.message))
-      .catch((error) => console.error("Error updating profile:", error));
+
+    const formData = new FormData();
+    formData.append("dob", dob);
+    formData.append("marks", marks);
+    formData.append("university", university);
+    formData.append("skills", skills);
+    formData.append("company", company);
+    formData.append("designation", designation);
+    formData.append("workExperience", workExperience);
+    formData.append("working", working);
+
+    if (resume) {
+      formData.append("resume", resume);
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Please log in to update your profile.");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/candidate/profile", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`, // Send token in Authorization header
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        alert("Profile updated successfully");
+      } else {
+        alert(`Error: ${data.message}`);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("An error occurred while updating the profile.");
+    }
   };
 
   return (
-    <div>
-      <h2>Update Profile</h2>
-      <form onSubmit={handleSubmit}>
-        <label>
-          Date of Birth:
-          <input
-            type="date"
-            name="dob"
-            value={profileData.dob}
-            onChange={handleChange}
-          />
-        </label>
-        <label>
-          Marks:
-          <input
-            type="text"
-            name="marks"
-            value={profileData.marks}
-            onChange={handleChange}
-          />
-        </label>
-        <label>
-          University:
-          <input
-            type="text"
-            name="university"
-            value={profileData.university}
-            onChange={handleChange}
-          />
-        </label>
-        <label>
-          Skills:
-          <input
-            type="text"
-            name="skills"
-            value={profileData.skills}
-            onChange={handleChange}
-          />
-        </label>
-        <label>
-          Company:
-          <input
-            type="text"
-            name="company"
-            value={profileData.company}
-            onChange={handleChange}
-          />
-        </label>
-        <label>
-          Designation:
-          <input
-            type="text"
-            name="designation"
-            value={profileData.designation}
-            onChange={handleChange}
-          />
-        </label>
-        <label>
-          Work Experience:
-          <input
-            type="text"
-            name="workExperience"
-            value={profileData.workExperience}
-            onChange={handleChange}
-          />
-        </label>
-        <label>
-          Working:
-          <input
-            type="checkbox"
-            name="working"
-            checked={profileData.working}
-            onChange={(e) =>
-              setProfileData({
-                ...profileData,
-                working: e.target.checked,
-              })
-            }
-          />
-        </label>
-        <button type="submit">Update Profile</button>
-      </form>
-    </div>
+    <form onSubmit={handleSubmit}>
+      <input
+        type="text"
+        value={dob}
+        onChange={(e) => setDob(e.target.value)}
+        placeholder="Date of Birth"
+      />
+      <input
+        type="text"
+        value={marks}
+        onChange={(e) => setMarks(e.target.value)}
+        placeholder="Marks"
+      />
+      <input
+        type="text"
+        value={university}
+        onChange={(e) => setUniversity(e.target.value)}
+        placeholder="University"
+      />
+      <input
+        type="text"
+        value={skills}
+        onChange={(e) => setSkills(e.target.value)}
+        placeholder="Skills"
+      />
+      <input
+        type="text"
+        value={company}
+        onChange={(e) => setCompany(e.target.value)}
+        placeholder="Company"
+      />
+      <input
+        type="text"
+        value={designation}
+        onChange={(e) => setDesignation(e.target.value)}
+        placeholder="Designation"
+      />
+      <input
+        type="text"
+        value={workExperience}
+        onChange={(e) => setWorkExperience(e.target.value)}
+        placeholder="Work Experience"
+      />
+      <input
+        type="checkbox"
+        checked={working}
+        onChange={() => setWorking(!working)}
+      />
+      Working Now
+      <input type="file" onChange={handleFileChange} accept=".pdf,.docx" />
+      <button type="submit">Update Profile</button>
+    </form>
   );
 };
 

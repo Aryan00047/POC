@@ -10,6 +10,7 @@ const viewEmployees = async (req, res) => {
   try {
     const employees = await User.find({ role: 'hr' }); // Find all employees (candidates)
     if (!employees || employees.length === 0) {
+      console.log("No employees found...")
       return res.status(404).json({ message: 'No employees found.' });
     }
     res.status(200).json({ message: 'Employees retrieved successfully.', employees });
@@ -23,6 +24,7 @@ const viewCandidates = async (req, res) => {
   try {
     const employees = await User.find({ role: 'hr' });
     if (!employees || employees.length === 0) {
+      console.log("No candidates found...")
       return res.status(404).json({ message: 'No candidates found.' });
     }
     res.status(200).json({ message: 'candidates retrieved successfully.', employees });
@@ -37,6 +39,7 @@ const viewApplications = async (req, res) => {
   try {
     const applications = await Application.find(); 
     if (!applications || applications.length === 0) {
+      console.log("No applications found...")
       return res.status(404).json({ message: 'No applications found.' });
     }
     res.status(200).json({ message: 'Applications retrieved successfully.', applications });
@@ -52,10 +55,12 @@ const viewHrByEmail = async (req, res) => {
     const { email } = req.params; // Extract HR email from URL params
     const hr = await User.findOne({ email, role: 'hr' }); // Find HR by email
     if (!hr) {
+      console.log("HR account not found...")
       return res.status(404).json({ message: 'HR account not found.' });
     }
 
     const jobs = await Job.find({ hrId: hr._id }); // Find jobs created by this HR
+    console.log("HR account and jobs retrieved successfully...")
     res.status(200).json({ message: 'HR account and jobs retrieved successfully.', hr, jobs });
   } catch (error) {
     console.error('Error fetching HR account or jobs:', error);
@@ -74,6 +79,7 @@ const deleteCandidateByEmail = async (req, res) => {
     const candidate = await User.findOneAndDelete({ email, role: 'candidate' });
 
     if (!candidate) {
+      console.log("Candidate not found...")
       return res.status(404).json({
         message: 'Candidate not found.',
         details: { email },
@@ -83,6 +89,7 @@ const deleteCandidateByEmail = async (req, res) => {
     // Delete associated applications
     await Application.deleteMany({ candidateId: candidate._id });
 
+    console.log("Candidate account and associated applications deleted successfully.")
     res.status(200).json({
       message: 'Candidate account and associated applications deleted successfully.',
     });
@@ -98,10 +105,12 @@ const deleteHrByEmail = async (req, res) => {
     const { email } = req.params; // Extract HR email from URL params
     const hr = await User.findOneAndDelete({ email, role: 'hr' }); // Find and delete HR by email
     if (!hr) {
+      console.log("HR account not found...")
       return res.status(404).json({ message: 'HR account not found.' });
     }
 
     await Job.deleteMany({ hrId: hr._id }); // Delete all jobs created by this HR
+    console.log("HR account and associated jobs deleted successfully.")
     res.status(200).json({ message: 'HR account and associated jobs deleted successfully.' });
   } catch (error) {
     console.error('Error deleting HR account:', error);
@@ -116,21 +125,25 @@ const updateApplicationStatus = async (req, res) => {
   try {
     // Validate applicationId and isSelected value
     if (isNaN(applicationId)) {
+      console.log('Invalid applicationId format. Must be a number.')
       return res.status(400).json({ message: 'Invalid applicationId format. Must be a number.' });
     }
     if (typeof isSelected !== 'boolean') {
+      console.log("Invalid isSelected value. Must be true or false.")
       return res.status(400).json({ message: 'Invalid isSelected value. Must be "true" or "false".' });
     }
 
     // Find the application by applicationId
     const application = await Application.findOne({ applicationId });
     if (!application) {
+      console.log("Application not found...")
       return res.status(404).json({ message: 'Application not found.' });
     }
 
     // Fetch job details using jobId
     const job = await Job.findById(application.jobId).select('company designation jobDescription package');
     if (!job) {
+      console.log("Job details not found...")
       return res.status(404).json({ message: 'Job details not found.' });
     }
 
