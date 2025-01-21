@@ -51,52 +51,6 @@ const postJob = async (req, res) => {
     }
   };
 
-// Fetch all candidates with name, email, working, and skills
-// const fetchCandidates = async (req, res) => {
-//     console.log("Fetch candidates hit...");
-    
-//     try {
-//         // Check if the user is authorized (assuming only 'hr' can access this endpoint)
-//         if (req.user.role !== 'hr') {
-//           console.log("You must be HR to access this...")
-//             return res.status(403).json({ message: 'Access denied. Not an HR.' });
-//         }
-
-//         // Fetch all candidates from the User collection
-//         const candidates = await User.find({ role: 'candidate' }, 'name email');
-        
-//         // Map candidates to their profiles
-//         const candidatesWithProfiles = await Promise.all(
-//             candidates.map(async (candidate) => {
-//                 const profile = await CandidateProfile.findOne(
-//                     { candidate_id: candidate._id },
-//                     'working skills'
-//                 );
-//                 return {
-//                     candidate: {
-//                         name: candidate.name,
-//                         email: candidate.email,
-//                     },
-//                     profile: profile
-//                         ? {
-//                               working: profile.working,
-//                               skills: profile.skills,
-//                           }
-//                         : null,
-//                 };
-//             })
-//         );
-
-//         console.log("You must be HR to access this...")
-//         res.status(200).json({
-//             message: 'Candidates fetched successfully',
-//             candidates: candidatesWithProfiles,
-//         });
-//     } catch (error) {
-//         console.error("Error fetching candidates:", error);
-//         res.status(500).json({ message: 'Server error', error: error.message });
-//     }
-// };
 const fetchCandidates = async (req, res) => {
   try {
     console.log("Fetch candidates hit...");
