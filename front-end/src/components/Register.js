@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Api from "./api";
 import Button from "./Button";
 import Error from "./Error";
+import Success from "./Success";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -140,9 +141,7 @@ const Register = () => {
       </form>
 
       <Error error={error}/>
-      {success && (
-        <p style={{ color: "green", marginTop: "10px" }}>{success}</p>
-      )}
+      <Success message={success}/>
     </div>
   );
 };

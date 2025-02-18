@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import Button from "./Button";
 import Api from "./api";
+import Success from "./Success";
+import Error from "./Error";
 
 const RegisterProfile = () => {
   const [formData, setFormData] = useState({
@@ -135,9 +137,8 @@ const RegisterProfile = () => {
       <Button type="submit" label="Submit"/>
     </form>
 
-    {error && <p style={{color:"red"}}>{error}</p>}
-
-    {message && <p style={{color:"green"}}>Profile Registered sucessfully</p>}
+    <Error error={error}/>
+    <Success message={message}/>
     </>
   );
 };

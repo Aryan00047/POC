@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import Api from "./api";
+import Error from "./Error";
 
 const ApplicationsPage = () => {
   const [applications, setApplications] = useState([]); // State to store applications
   const [loading, setLoading] = useState(true); // State to track loading
   const [error, setError] = useState(null); // State to store errors
+  const url = "/api/candidate/applications";
+  const method = "get"
 
   // Fetch candidate applications from the API
   useEffect(() => {
@@ -17,11 +20,7 @@ const ApplicationsPage = () => {
           return;
         }
 
-        const response = await axios.get("/api/candidate/applications", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await Api({url, method, token});
 
         setApplications(response.data.applications); // Set applications data
       } catch (err) {
@@ -42,7 +41,7 @@ const ApplicationsPage = () => {
 
   // Render error state
   if (error) {
-    return <div>{error}</div>;
+    <Error error={error}/>
   }
 
   // Render when no applications are available

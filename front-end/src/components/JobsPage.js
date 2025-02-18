@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from "react";
 import Api from "./api";
+import Error from "./Error";
+// import Success from "./Success";
 
 const JobsPage = () => {
-  const [jobs, setJobs] = useState([]); // State to store jobs
-  const [loading, setLoading] = useState(true); // State to track loading state
-  const [error, setError] = useState(null); // State to store any errors
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  // const [message, setMessage] = useState("");
   const url = "/api/candidate/jobs";
   const method = "get";
 
-  // Fetch available jobs from the API
   useEffect(() => {
     const fetchJobs = async () => {
       try {
@@ -19,15 +21,14 @@ const JobsPage = () => {
           return;
         }
 
-        // Pass the token in the Authorization header
         const response = await Api({url, token, method});
 
-        setJobs(response.data.jobs); // Set the jobs in state
+        setJobs(response.data.jobs);
       } catch (err) {
         setError("Failed to fetch jobs. Please try again later.");
         console.error(err);
       } finally {
-        setLoading(false); // Set loading to false once the request is complete
+        setLoading(false);
       }
     };
 
@@ -39,7 +40,7 @@ const JobsPage = () => {
   }
 
   if (error) {
-    return <div>{error}</div>; // Display error message
+    <Error error={error}/>
   }
 
   return (
