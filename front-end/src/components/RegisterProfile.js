@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import Button from "./Button";
-import axios from 'axios'
+import axios from 'axios';
 
-const UpdateProfile = () => {
+const RegisterProfile = () => {
   const [formData, setFormData] = useState({
     dob:"",
     marks:"",
@@ -17,6 +17,10 @@ const UpdateProfile = () => {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   
+  const minDate = new Date();
+  minDate.setFullYear(minDate.getFullYear() - 18);
+  const minDateString = minDate.toISOString().split("T")[0]; // Format as yyyy-mm-dd
+
   const handleChange = (e) => {
     const { name, type, value, checked, files } = e.target;
 
@@ -32,6 +36,14 @@ const UpdateProfile = () => {
     const errors = [];
     setMessage("");
 
+    if(!formData.dob || !formData.marks ||!formData.skills ||!formData.university ||!formData.resume){
+      errors.push("DOB, Marks, University, Skills - these fields are mandatory..." )
+    }
+
+    if(formData.working && (!formData.company || !formData.designation || !formData.workExperience)){
+      errors.push("You are working but not mentioned company name, work experience or designatiion...")
+    }
+
     const token = localStorage.getItem("token");
     if (!token) {
       errors.push("Please log in to update your profile.");
@@ -41,12 +53,12 @@ const UpdateProfile = () => {
       setError(errors.join(" "))
       return;
     }else{
-        try {
-            const response = await axios.post("/api/candidate/profile", formData,{
-              headers: {
-                Authorization: `Bearer ${token}`, // Send token in Authorization header
-              }
-            });
+    try {
+      const response = await axios.post("/api/candidate/profile", formData,{
+        headers: {
+          Authorization: `Bearer ${token}`, // Send token in Authorization header
+        }
+      });
 
       const data = await response.json();
       if (response.ok) {
@@ -62,7 +74,7 @@ const UpdateProfile = () => {
 
   return (
     <>
-    <h1>Update your Profile...</h1>
+    <h1>Register your Profile...</h1>
     <form onSubmit={handleSubmit}>
       <input
         name="dob"
@@ -70,6 +82,7 @@ const UpdateProfile = () => {
         value={formData.dob}
         onChange={handleChange}
         placeholder="Date of Birth"
+        min={minDateString}
       />
       <input
         name="marks"
@@ -131,4 +144,4 @@ const UpdateProfile = () => {
   );
 };
 
-export default UpdateProfile;
+export default RegisterProfile;

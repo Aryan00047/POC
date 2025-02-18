@@ -9,7 +9,13 @@ router.post(
   "/profile",
   protectRoute(["candidate"]),
   upload.single("resume"),
-  candidateController.updateOrCreateProfile
+  candidateController.registerProfile
+);
+router.put(
+  "/profile",
+  protectRoute(["candidate"]),
+  upload.single("resume"),
+  candidateController.updateProfile
 );
 router.get(
   "/profile",

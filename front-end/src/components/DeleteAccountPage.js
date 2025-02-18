@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import axios from "axios";
 
 const DeleteAccountPage = () => {
-  const [loading, setLoading] = useState(false); // State for loading
-  const [error, setError] = useState(null); // State for error messages
-  const [success, setSuccess] = useState(null); // State for success messages
+  const [loading, setLoading] = useState(false); 
+  const [error, setError] = useState(null); 
+  const [success, setSuccess] = useState(null); 
 
   const handleDeleteAccount = async () => {
     const confirmation = window.confirm(

@@ -1,27 +1,58 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import Button from "./Button";
+import Error from "./Error";
 
 const Register = () => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState("candidate"); // Default role
-  const [error, setError] = useState(""); // To display error messages
-  const [success, setSuccess] = useState(""); // To display success messages
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "Candidate"
+  });
+
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(""); 
   const navigate = useNavigate();
+
+  const handleClick = useCallback((e) => {
+    setFormData((prevData) => ({
+      ...prevData,
+      [e.target.name]: e.target.value
+    }))
+  },[]);
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    setError(""); // Clear previous errors
-    setSuccess(""); // Clear previous success messages
+    setError("");
+    setSuccess(""); 
+    const errors = [];
 
-    try {
+      if(!formData.email || !formData.name || !formData.password){
+        errors.push("All fields are required...")
+      }
+
+      if(formData.name && !/^[A-Za-z ]+$/.test(formData.name)){
+        errors.push("Name should not contain special and numeric character...");
+      }
+
+      if(formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)){
+        errors.push("Incorrect email syntax...");
+      }
+
+      if(formData.password && !/^(?=(?:.*[A-Z]){1,})(?=(?:.*[a-z]){1,})(?=(?:.*[0-9]){1,})(?=(?:.*[_@#$]){1,}).{7,}$/.test(formData.password)){
+        errors.push("Passowrd should contain altleast one Uppercase, lowercase, numeric and special char with min length being 7.");
+      }
+
+      if (errors.length > 0) {
+        setError(errors.join(" "));
+        return;
+      }
+
+      try{
       const response = await axios.post("/api/user/register", {
-        name,
-        email,
-        password,
-        role,
+        ...formData
       });
 
       if (response.status === 201) {
@@ -53,11 +84,12 @@ const Register = () => {
           <label>Name</label>
           <br />
           <input
+            name = "name"
             type="text"
             placeholder="Enter your name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
+            value={formData.name}
+            onChange={handleClick}
+            // required
           />
         </div>
         <br />
@@ -65,11 +97,12 @@ const Register = () => {
           <label>Email</label>
           <br />
           <input
+            name="email"
             type="email"
             placeholder="Enter your email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
+            value={formData.email}
+            onChange={handleClick}
+            // required
           />
         </div>
         <br />
@@ -77,11 +110,12 @@ const Register = () => {
           <label>Password</label>
           <br />
           <input
+            name="password"
             type="password"
             placeholder="Enter your password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
+            value={formData.password}
+            onChange={handleClick}
+            // required
           />
         </div>
         <br />
@@ -89,9 +123,10 @@ const Register = () => {
           <label>Role</label>
           <br />
           <select
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            required
+            name="role"
+            value={formData.role}
+            onChange={handleClick}
+            // required
           >
             <option value="candidate">Candidate</option>
             <option value="hr">HR</option>
@@ -99,11 +134,10 @@ const Register = () => {
           </select>
         </div>
         <br />
-        <button type="submit" style={{ padding: "10px 20px" }}>
-          Register
-        </button>
+        <Button type="submit" label="Register"/>
       </form>
-      {error && <p style={{ color: "red", marginTop: "10px" }}>{error}</p>}
+
+      <Error error={error}/>
       {success && (
         <p style={{ color: "green", marginTop: "10px" }}>{success}</p>
       )}

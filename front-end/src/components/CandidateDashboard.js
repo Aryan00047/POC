@@ -24,6 +24,9 @@ const CandidateDashboard = () => {
           <li>
             <Link to="/candidateDashboard/deleteAccount">Delete Account</Link>
           </li>
+          <li>
+            <Link to="/candidateDashboard/logout">Logout</Link>
+          </li>
         </ul>
       </nav>
       {/* Outlet for rendering child routes */}

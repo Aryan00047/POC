@@ -1,21 +1,24 @@
-import React from "react";
+import {lazy, Suspense} from 'react';
 import {
   BrowserRouter as Router,
   Route,
   Routes,
   Navigate,
 } from "react-router-dom";
-import Homepage from "./components/HomePage";
-import Login from "./components/Login";
-import Register from "./components/Register";
-import CandidateDashboard from "./components/CandidateDashboard";
-import AdminDashboard from "./components/AdminDashboard";
-import HrDashboard from "./components/HrDashboard";
-import Profile from "./components/ProfilePage";
-import UpdateProfile from "./components/UpdateProfile";
-import ViewJobs from "./components/JobsPage";
-import ViewApplications from "./components/ApplicationsPage";
-import DeleteAccount from "./components/DeleteAccountPage";
+
+const HomePage = lazy(() => import("./components/HomePage"))
+const Login = lazy(() => import("./components/Login"))
+const Register = lazy(() => import("./components/Register"))
+const CandidateDashboard = lazy(() => import("./components/CandidateDashboard"))
+const AdminDashboard = lazy(() => import("./components/AdminDashboard"))
+const HrDashboard = lazy(() => import("./components/HrDashboard"))
+const Profile = lazy(() => import("./components/ProfilePage"))
+const RegisterProfile = lazy(() => import('./components/RegisterProfile'))
+const UpdateProfile = lazy(() => import("./components/UpdateProfile"))
+const ViewJobs = lazy(() => import("./components/JobsPage"))
+const ViewApplications = lazy(() => import("./components/ApplicationsPage"))
+const DeleteAccount = lazy(() => import("./components/DeleteAccountPage"))
+const Logout = lazy(()=> import("./components/Logout"));
 
 // PrivateRoute Component to handle role-based redirection
 const PrivateRoute = ({ element, requiredRole }) => {
@@ -33,8 +36,9 @@ function App() {
   return (
     <Router>{/*wraps application and provides routing capablities*/}
       <div>
+        <Suspense fallback={<>Loading...</>}>
         <Routes>{/*A wrapper for all the route components*/ }
-          <Route path="/" element={<Homepage />} />{/*Redirects the user to another route programmatically*/}
+          <Route path="/" element={<HomePage />} />{/*Redirects the user to another route programmatically*/}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
@@ -50,10 +54,12 @@ function App() {
           >
             {/* No need for "/" as this will be relative to /candidateDashboard */}
             <Route path="profile" element={<Profile />} />
+            <Route path="registerProfile" element={<RegisterProfile/>}/>
             <Route path="updateProfile" element={<UpdateProfile />} />
             <Route path="viewJobs" element={<ViewJobs />} />
             <Route path="viewApplications" element={<ViewApplications />} />
             <Route path="deleteAccount" element={<DeleteAccount />} />
+            <Route path='logout' element={<Logout/>}/>
           </Route>
 
           {/* Admin and HR Dashboards */}
@@ -70,6 +76,7 @@ function App() {
             }
           />
         </Routes>
+        </Suspense>
       </div>
     </Router>
   );

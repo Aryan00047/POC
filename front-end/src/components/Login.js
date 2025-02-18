@@ -1,22 +1,49 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import Button from "./Button";
+import Error from "./Error";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({
+    email: "",
+    password: ""
+  })
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  const handleChange = (e) => {
+    setFormData((prevData) => ({
+      ...prevData,
+      [e.target.name]: e.target.value
+    }))
+  };
+  
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError(""); // Clear previous errors
+    setError("");
+    const errors = [];
 
-    try {
-      // Make a POST request to the login endpoint
+      if(!formData.email || !formData.password){
+        errors.push("All fields are required...")
+      }
+
+      if(formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)){
+        errors.push("Incorrect email syntax...");
+      }
+
+      if(formData.password && !/^(?=(?:.*[A-Z]){1,})(?=(?:.*[a-z]){1,})(?=(?:.*[0-9]){1,})(?=(?:.*[_@#$]){1,}).{7,}$/.test(formData.password)){
+        errors.push("Passowrd should contain altleast one Uppercase, lowercase, numeric and special char with min length being 7.");
+      }
+
+      if(errors.length>0){
+        setError(errors.join(" "));
+        return;
+      }
+
+      try{
       const response = await axios.post("/api/user/login", {
-        email,
-        password,
+        ...formData
       });
 
       if (response.status === 200) {
@@ -39,10 +66,8 @@ const Login = () => {
     } catch (error) {
       console.error("Login error:", error);
       if (error.response) {
-        // Show backend error message if available
         setError(error.response.data.message || "Login failed.");
       } else {
-        // Show a generic error message for other issues
         setError("An unexpected error occurred. Please try again later.");
       }
     }
@@ -59,10 +84,11 @@ const Login = () => {
           <label>Email</label>
           <br />
           <input
+            name="email"
             type="email"
             placeholder="Enter your email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={formData.email}
+            onChange={handleChange}
             required
           />
         </div>
@@ -71,19 +97,19 @@ const Login = () => {
           <label>Password</label>
           <br />
           <input
+            name="password"
             type="password"
             placeholder="Enter your password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            value={formData.password}
+            onChange={handleChange}
             required
           />
         </div>
         <br />
-        <button type="submit" style={{ padding: "10px 20px" }}>
-          Login
-        </button>
+        <Button type="submit" label="Login"/>
       </form>
-      {error && <p style={{ color: "red", marginTop: "10px" }}>{error}</p>}
+
+      <Error error={error}/>
     </div>
   );
 };

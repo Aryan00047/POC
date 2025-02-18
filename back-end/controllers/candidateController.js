@@ -8,8 +8,96 @@ const mongoose = require("mongoose");
 const transporter = require("../middleware/emailTransporter");
 const { newApplicationEmailTemplate } = require("../middleware/emailTemplates");
 
-// Function to handle the profile update or creation
-const updateOrCreateProfile = async (req, res) => {
+// // Function to handle the profile update or creation
+// const updateOrCreateProfile = async (req, res) => {
+//   const {
+//     dob,
+//     marks,
+//     university,
+//     skills,
+//     company,
+//     designation,
+//     workExperience,
+//     working,
+//   } = req.body;
+//   const candidateId = req.user.userId; // Assuming userId is decoded from JWT token
+//   const resumeBuffer = req.file ? req.file.buffer : null; // Get the buffer of the uploaded resume
+
+//   try {
+//     const candidate = await User.findById(candidateId);
+//     if (!candidate || candidate.role !== "candidate") {
+//       return res
+//         .status(403)
+//         .json({ message: "Access denied. Not a candidate." });
+//     }
+
+//     const existingProfile = await Profile.findOne({
+//       candidate_id: candidateId,
+//     });
+
+//     // Delete the old resume file if it exists
+//     if (existingProfile && existingProfile.resume && resumeBuffer) {
+//       const oldResumePath = path.resolve(existingProfile.resume);
+//       try {
+//         await fs.access(oldResumePath);
+//         await fs.unlink(oldResumePath);
+//       } catch (err) {
+//         console.log("Old resume not found, skipping deletion.");
+//       }
+//     }
+
+//     let updatedResumePath = null;
+//     if (resumeBuffer) {
+//       // Handle the file buffer by uploading to GridFS or saving to a file
+//       const fileExtension = path.extname(req.file.originalname);
+//       const newResumeName = `${candidate.email}${fileExtension}`;
+//       const newResumePath = path.join(__dirname, "../uploads", newResumeName);
+
+//       // Save the buffer to disk or upload to GridFS here (if needed)
+//       try {
+//         await fs.writeFile(newResumePath, resumeBuffer); // Save to disk (for demonstration)
+//         updatedResumePath = newResumePath;
+//       } catch (err) {
+//         return res
+//           .status(500)
+//           .json({ message: "Error saving resume file", error: err.message });
+//       }
+//     }
+
+//     const updateFields = {};
+//     if (dob) updateFields.dob = dob;
+//     if (marks) updateFields.marks = marks;
+//     if (university) updateFields.university = university;
+//     if (skills) updateFields.skills = skills;
+//     if (company) updateFields.company = company;
+//     if (designation) updateFields.designation = designation;
+//     if (workExperience) updateFields.workExperience = workExperience;
+//     if (working) updateFields.working = working;
+
+//     updateFields.name = candidate.name;
+//     updateFields.email = candidate.email;
+//     if (updatedResumePath) updateFields.resume = updatedResumePath;
+
+//     const profile = await Profile.findOneAndUpdate(
+//       { candidate_id: candidateId },
+//       { $set: updateFields },
+//       { upsert: true, new: true }
+//     );
+
+//     console.log("Profile updated successfully: ", profile)
+//     return res
+//       .status(200)
+//       .json({ message: "Profile updated successfully", profile });
+//   } catch (error) {
+//     console.error("Error updating profile:", error);
+//     return res
+//       .status(500)
+//       .json({ message: "Error updating profile", error: error.message });
+//   }
+// };
+
+// Register Profile (POST)
+const registerProfile = async (req, res) => {
   const {
     dob,
     marks,
@@ -20,23 +108,81 @@ const updateOrCreateProfile = async (req, res) => {
     workExperience,
     working,
   } = req.body;
-  const candidateId = req.user.userId; // Assuming userId is decoded from JWT token
-  const resumeBuffer = req.file ? req.file.buffer : null; // Get the buffer of the uploaded resume
+  const candidateId = req.user.userId;
+  const resumeBuffer = req.file ? req.file.buffer : null;
 
   try {
     const candidate = await User.findById(candidateId);
     if (!candidate || candidate.role !== "candidate") {
-      return res
-        .status(403)
-        .json({ message: "Access denied. Not a candidate." });
+      return res.status(403).json({ message: "Access denied. Not a candidate." });
     }
 
-    const existingProfile = await Profile.findOne({
+    // Check if profile already exists
+    const existingProfile = await Profile.findOne({ candidate_id: candidateId });
+    if (existingProfile) {
+      return res.status(400).json({ message: "Profile already exists. Use PUT to update." });
+    }
+
+    let resumePath = null;
+    if (resumeBuffer) {
+      const fileExtension = path.extname(req.file.originalname);
+      const newResumeName = `${candidate.email}${fileExtension}`;
+      const newResumePath = path.join(__dirname, "../uploads", newResumeName);
+      await fs.writeFile(newResumePath, resumeBuffer);
+      resumePath = newResumePath;
+    }
+
+    const newProfile = new Profile({
       candidate_id: candidateId,
+      name: candidate.name,
+      email: candidate.email,
+      dob,
+      marks,
+      university,
+      skills,
+      company,
+      designation,
+      workExperience,
+      working,
+      resume: resumePath,
     });
 
-    // Delete the old resume file if it exists
-    if (existingProfile && existingProfile.resume && resumeBuffer) {
+    await newProfile.save();
+    return res.status(201).json({ message: "Profile registered successfully", profile: newProfile });
+  } catch (error) {
+    console.error("Error registering profile:", error);
+    return res.status(500).json({ message: "Error registering profile", error: error.message });
+  }
+};
+
+// Update Profile (PUT)
+const updateProfile = async (req, res) => {
+  const {
+    dob,
+    marks,
+    university,
+    skills,
+    company,
+    designation,
+    workExperience,
+    working,
+  } = req.body;
+  const candidateId = req.user.userId;
+  const resumeBuffer = req.file ? req.file.buffer : null;
+
+  try {
+    const candidate = await User.findById(candidateId);
+    if (!candidate || candidate.role !== "candidate") {
+      return res.status(403).json({ message: "Access denied. Not a candidate." });
+    }
+
+    const existingProfile = await Profile.findOne({ candidate_id: candidateId });
+    if (!existingProfile) {
+      return res.status(404).json({ message: "Profile not found. Use POST to register." });
+    }
+
+    // Delete old resume if a new one is uploaded
+    if (existingProfile.resume && resumeBuffer) {
       const oldResumePath = path.resolve(existingProfile.resume);
       try {
         await fs.access(oldResumePath);
@@ -46,53 +192,37 @@ const updateOrCreateProfile = async (req, res) => {
       }
     }
 
-    let updatedResumePath = null;
+    let updatedResumePath = existingProfile.resume;
     if (resumeBuffer) {
-      // Handle the file buffer by uploading to GridFS or saving to a file
       const fileExtension = path.extname(req.file.originalname);
       const newResumeName = `${candidate.email}${fileExtension}`;
       const newResumePath = path.join(__dirname, "../uploads", newResumeName);
-
-      // Save the buffer to disk or upload to GridFS here (if needed)
-      try {
-        await fs.writeFile(newResumePath, resumeBuffer); // Save to disk (for demonstration)
-        updatedResumePath = newResumePath;
-      } catch (err) {
-        return res
-          .status(500)
-          .json({ message: "Error saving resume file", error: err.message });
-      }
+      await fs.writeFile(newResumePath, resumeBuffer);
+      updatedResumePath = newResumePath;
     }
 
-    const updateFields = {};
-    if (dob) updateFields.dob = dob;
-    if (marks) updateFields.marks = marks;
-    if (university) updateFields.university = university;
-    if (skills) updateFields.skills = skills;
-    if (company) updateFields.company = company;
-    if (designation) updateFields.designation = designation;
-    if (workExperience) updateFields.workExperience = workExperience;
-    if (working) updateFields.working = working;
+    const updateFields = {
+      dob,
+      marks,
+      university,
+      skills,
+      company,
+      designation,
+      workExperience,
+      working,
+      resume: updatedResumePath,
+    };
 
-    updateFields.name = candidate.name;
-    updateFields.email = candidate.email;
-    if (updatedResumePath) updateFields.resume = updatedResumePath;
-
-    const profile = await Profile.findOneAndUpdate(
+    const updatedProfile = await Profile.findOneAndUpdate(
       { candidate_id: candidateId },
       { $set: updateFields },
-      { upsert: true, new: true }
+      { new: true }
     );
 
-    console.log("Profile updated successfully: ", profile)
-    return res
-      .status(200)
-      .json({ message: "Profile updated successfully", profile });
+    return res.status(200).json({ message: "Profile updated successfully", profile: updatedProfile });
   } catch (error) {
     console.error("Error updating profile:", error);
-    return res
-      .status(500)
-      .json({ message: "Error updating profile", error: error.message });
+    return res.status(500).json({ message: "Error updating profile", error: error.message });
   }
 };
 
@@ -324,7 +454,8 @@ const deleteCandidateProfile = async (req, res) => {
 };
 
 module.exports = {
-  updateOrCreateProfile,
+  updateProfile,
+  registerProfile,
   getProfile,
   fetchAvailableJobs,
   applyForJob,
