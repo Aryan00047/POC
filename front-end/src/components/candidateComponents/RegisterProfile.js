@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import Button from "./Button";
-import Api from "./api";
-import Success from "./Success";
-import Error from "./Error";
+import Button from "../reusableComponents/Button";
+import Api from "../reusableComponents/api";
+import Success from "../reusableComponents/Success";
+import Error from "../reusableComponents/Error";
 
 const RegisterProfile = () => {
   const [formData, setFormData] = useState({

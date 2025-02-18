@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Api from "./api";
-import Success from "./Success";
-import Error from "./Error";
+import Api from "../reusableComponents/api";
+import Success from "../reusableComponents/Success";
+import Error from "../reusableComponents/Error";
 
 const Profile = () => {
     const [profile, setProfile] = useState(null);

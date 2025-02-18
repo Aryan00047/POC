@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Api from "./api";
+import Api from "./reusableComponents/api";
 
 const DeleteAccountPage = () => {
   const [loading, setLoading] = useState(false); 

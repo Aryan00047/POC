@@ -1,9 +1,9 @@
 import React, { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Api from "./api";
-import Button from "./Button";
-import Error from "./Error";
-import Success from "./Success";
+import Api from "./reusableComponents/api";
+import Button from "./reusableComponents/Button";
+import Error from "./reusableComponents/Error";
+import Success from "./reusableComponents/Success";
 
 const Register = () => {
   const [formData, setFormData] = useState({

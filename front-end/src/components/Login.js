@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Api from "./api";
-import Button from "./Button";
-import Error from "./Error";
+import Api from "./reusableComponents/api";
+import Button from "./reusableComponents/Button";
+import Error from "./reusableComponents/Error";
 
 const Login = () => {
   const [formData, setFormData] = useState({

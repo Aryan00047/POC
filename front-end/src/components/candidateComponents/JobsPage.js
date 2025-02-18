@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import Api from "./api";
-import Error from "./Error";
+import Api from "../reusableComponents/api";
+import Error from "../reusableComponents/Error";
 // import Success from "./Success";
 
 const JobsPage = () => {
