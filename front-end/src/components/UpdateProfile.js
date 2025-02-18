@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Button from "./Button";
-import axios from 'axios'
+import Api from "./api";
 
 const UpdateProfile = () => {
   const [formData, setFormData] = useState({
@@ -16,6 +16,8 @@ const UpdateProfile = () => {
   })
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const url = "/api/candidate/profile";
+  const method = "put"
   
   const handleChange = (e) => {
     const { name, type, value, checked, files } = e.target;
@@ -42,11 +44,7 @@ const UpdateProfile = () => {
       return;
     }else{
         try {
-            const response = await axios.post("/api/candidate/profile", formData,{
-              headers: {
-                Authorization: `Bearer ${token}`, // Send token in Authorization header
-              }
-            });
+            const response = await Api({url, formData, token, method});
 
       const data = await response.json();
       if (response.ok) {

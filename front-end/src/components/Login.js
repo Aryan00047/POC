@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import Api from "./api";
 import Button from "./Button";
 import Error from "./Error";
 
@@ -11,6 +11,8 @@ const Login = () => {
   })
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const url = "/api/user/login";
+  const method = "post";
 
   const handleChange = (e) => {
     setFormData((prevData) => ({
@@ -42,9 +44,7 @@ const Login = () => {
       }
 
       try{
-      const response = await axios.post("/api/user/login", {
-        ...formData
-      });
+      const response = await Api({url, formData, method});
 
       if (response.status === 200) {
         const { token, role, userId } = response.data;

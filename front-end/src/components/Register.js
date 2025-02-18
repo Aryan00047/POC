@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import Api from "./api";
 import Button from "./Button";
 import Error from "./Error";
 
@@ -15,6 +15,9 @@ const Register = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(""); 
   const navigate = useNavigate();
+
+  const url = '/api/user/register';
+  const method = 'post';
 
   const handleClick = useCallback((e) => {
     setFormData((prevData) => ({
@@ -51,9 +54,8 @@ const Register = () => {
       }
 
       try{
-      const response = await axios.post("/api/user/register", {
-        ...formData
-      });
+      
+      const response = await Api({ url, formData, method });
 
       if (response.status === 201) {
         setSuccess("Registration successful! Redirecting to login...");

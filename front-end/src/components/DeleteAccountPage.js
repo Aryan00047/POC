@@ -1,10 +1,12 @@
 import React, { useState } from "react";
-import axios from "axios";
+import Api from "./api";
 
 const DeleteAccountPage = () => {
   const [loading, setLoading] = useState(false); 
   const [error, setError] = useState(null); 
   const [success, setSuccess] = useState(null); 
+  const url = "/api/candidate/profile";
+  const method = "delete";
 
   const handleDeleteAccount = async () => {
     const confirmation = window.confirm(
@@ -28,11 +30,7 @@ const DeleteAccountPage = () => {
       }
 
       // Make DELETE request to delete the account
-      const response = await axios.delete("/api/candidate/profile", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await Api({url, method, token});
 
       setSuccess(response.data.message); // Display success message
       localStorage.removeItem("token"); // Clear token from localStorage

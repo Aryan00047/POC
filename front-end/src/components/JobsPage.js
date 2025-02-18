@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import Api from "./api";
 
 const JobsPage = () => {
   const [jobs, setJobs] = useState([]); // State to store jobs
   const [loading, setLoading] = useState(true); // State to track loading state
   const [error, setError] = useState(null); // State to store any errors
+  const url = "/api/candidate/jobs";
+  const method = "get";
 
   // Fetch available jobs from the API
   useEffect(() => {
@@ -18,11 +20,7 @@ const JobsPage = () => {
         }
 
         // Pass the token in the Authorization header
-        const response = await axios.get("/api/candidate/jobs", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await Api({url, token, method});
 
         setJobs(response.data.jobs); // Set the jobs in state
       } catch (err) {
@@ -69,6 +67,9 @@ const JobsPage = () => {
 
 // Function to apply for the job (you can integrate this with your backend API)
 const applyForJob = async (jobId) => {
+  const url = `/api/candidate/apply/${jobId}`
+  const method = "post"
+
   try {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -77,15 +78,7 @@ const applyForJob = async (jobId) => {
     }
 
     // Send API request to apply for the job
-    const response = await axios.post(
-      `/api/candidate/apply/${jobId}`,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${token}`, // Include the token in headers
-        },
-      }
-    );
+    const response = await Api({url, method, token})
 
     // Success message from the backend
     alert(response.data.message || "Application submitted successfully!");

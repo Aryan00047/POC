@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Button from "./Button";
-import axios from 'axios';
+import Api from "./api";
 
 const RegisterProfile = () => {
   const [formData, setFormData] = useState({
@@ -16,6 +16,8 @@ const RegisterProfile = () => {
   })
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const url = "/api/candidate/profile";
+  const method = "post"
   
   const minDate = new Date();
   minDate.setFullYear(minDate.getFullYear() - 18);
@@ -54,11 +56,7 @@ const RegisterProfile = () => {
       return;
     }else{
     try {
-      const response = await axios.post("/api/candidate/profile", formData,{
-        headers: {
-          Authorization: `Bearer ${token}`, // Send token in Authorization header
-        }
-      });
+      const response = await Api({url, formData, token, method});
 
       const data = await response.json();
       if (response.ok) {
