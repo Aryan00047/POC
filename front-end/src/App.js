@@ -16,8 +16,8 @@ const Profile = lazy(() => import("./components/candidateComponents/ProfilePage"
 const RegisterProfile = lazy(() => import('./components/candidateComponents/RegisterProfile'))
 const UpdateProfile = lazy(() => import("./components/candidateComponents/UpdateProfile"))
 const ViewJobs = lazy(() => import("./components/candidateComponents/JobsPage"))
-const ViewApplications = lazy(() => import("./components/ApplicationsPage"))
-const DeleteAccount = lazy(() => import("./components/DeleteAccountPage"))
+const ViewApplications = lazy(() => import("./components/candidateComponents/ApplicationsPage"))
+const DeleteAccount = lazy(() => import("./components/candidateComponents/DeleteAccountPage"))
 const Logout = lazy(()=> import("./components/Logout"));
 
 // PrivateRoute Component to handle role-based redirection

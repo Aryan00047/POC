@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import Api from "./reusableComponents/api";
-import Error from "./reusableComponents/Error";
+import Api from "../reusableComponents/api";
+import Error from "../reusableComponents/Error";
 
 const ApplicationsPage = () => {
   const [applications, setApplications] = useState([]); // State to store applications
