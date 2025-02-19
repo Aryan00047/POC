@@ -18,7 +18,6 @@ conn.once("open", () => {
     console.log("GridFSBucket initialized");
 });
 
-// Register Profile (POST)
 const registerProfile = async (req, res) => {
   const {
     dob,
@@ -32,8 +31,10 @@ const registerProfile = async (req, res) => {
   } = req.body;
   const candidateId = req.user.userId;
   const resumeBuffer = req.file ? req.file.buffer : null;
+  const resumeName = req.file ? req.file.originalname : null;
 
   try {
+    // Check if user is a candidate
     const candidate = await User.findById(candidateId);
     if (!candidate || candidate.role !== "candidate") {
       return res.status(403).json({ message: "Access denied. Not a candidate." });
@@ -45,15 +46,30 @@ const registerProfile = async (req, res) => {
       return res.status(400).json({ message: "Profile already exists. Use PUT to update." });
     }
 
-    let resumePath = null;
-    if (resumeBuffer) {
-      const fileExtension = path.extname(req.file.originalname);
-      const newResumeName = `${candidate.email}${fileExtension}`;
-      const newResumePath = path.join(__dirname, "../uploads", newResumeName);
-      await fs.writeFile(newResumePath, resumeBuffer);
-      resumePath = newResumePath;
+    // Ensure GridFS is initialized
+    if (!gfs) {
+      console.error("GridFSBucket is not initialized!");
+      return res.status(500).json({ message: "Server error: GridFSBucket is not initialized." });
     }
 
+    let resumeId = null;
+    if (resumeBuffer) {
+      const uploadStream = gfs.openUploadStream(resumeName, { contentType: "application/pdf" });
+
+      // Wait for the upload to complete
+      await new Promise((resolve, reject) => {
+        uploadStream.end(resumeBuffer, (err) => {
+          if (err) {
+            console.error("Error uploading resume to GridFS:", err);
+            return reject(err);
+          }
+          resumeId = uploadStream.id;
+          resolve();
+        });
+      });
+    }
+
+    // Create new profile
     const newProfile = new Profile({
       candidate_id: candidateId,
       name: candidate.name,
@@ -66,11 +82,12 @@ const registerProfile = async (req, res) => {
       designation,
       workExperience,
       working,
-      resume: resumePath,
+      resume: resumeId, // Store GridFS file ID
     });
 
     await newProfile.save();
     return res.status(201).json({ message: "Profile registered successfully", profile: newProfile });
+
   } catch (error) {
     console.error("Error registering profile:", error);
     return res.status(500).json({ message: "Error registering profile", error: error.message });
