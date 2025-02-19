@@ -7,6 +7,16 @@ const fs = require('fs').promises; // Use the promises API
 const mongoose = require('mongoose');
 const transporter = require('../middleware/emailTransporter');
 const { selectEmailTemplate, rejectEmailTemplate } = require('../middleware/emailTemplates');
+const { ObjectId } = require("mongoose").Types;
+const { GridFSBucket } = require("mongodb");
+
+const conn = mongoose.connection;
+let gfs;
+
+conn.once("open", () => {
+  gfs = new GridFSBucket(conn.db, { bucketName: "uploads" }); // Adjust bucket name if needed
+  console.log("GridFSBucket in hr initialized");
+});
 
 // Function to post a new job listing
 const postJob = async (req, res) => {
@@ -136,63 +146,47 @@ const fetchCandidateProfile = async (req, res) => {
 
 // Download Resume
 const downloadResumeHR = async (req, res) => {
-  const { email } = req.params; // Get the candidate's email from the request parameters
-
   try {
-      // Verify if the user making the request has the 'hr' role
-      if (req.user.role !== 'hr') {
-        console.log("You must be HR to download resume...")
-        return res.status(403).json({ message: 'Access denied. Only HR can download resumes.' });
-      }
+    const { email } = req.params; // Get candidate's email from request parameters
 
-      // Find the candidate using the email in the User model
-      const candidate = await User.findOne({ email, role: 'candidate' });
-      if (!candidate) {
-          console.log("Candidate not found...")
-          return res.status(404).json({ message: 'Candidate not found.' });
-      }
+    // Verify if the requesting user is HR
+    if (req.user.role !== "hr") {
+      return res.status(403).json({ message: "Access denied. Only HR can download resumes." });
+    }
 
-      // Fetch the candidate's profile using the candidate's ID
-      const profile = await CandidateProfile.findOne({ candidate_id: candidate._id });
-      if (!profile || !profile.resume) {
-          console.log("Resume not found...")
-          return res.status(404).json({ message: 'Resume not found for this candidate.' });
-      }
+    // Find the candidate using email in the User model
+    const candidate = await User.findOne({ email, role: "candidate" });
+    if (!candidate) {
+      return res.status(404).json({ message: "Candidate not found." });
+    }
 
-      // Get the resume path
-      const resumePath = profile.resume;
+    // Fetch candidate's profile using the candidate's ID
+    const profile = await CandidateProfile.findOne({ candidate_id: candidate._id });
+    if (!profile || !profile.resume) {
+      return res.status(404).json({ message: "Resume not found for this candidate." });
+    }
 
-      // Ensure the resume file exists using fs.promises
-      try {
-          await fs.access(resumePath); // Check if the file exists
-      } catch {
-          console.log("Resume file not found on the server...")
-          return res.status(404).json({ message: 'Resume file not found on the server.' });
-      }
+    const fileId = new ObjectId(profile.resume); // Convert resume ID to ObjectId
 
-      // Define the downloads directory
-      const downloadsDir = path.join(__dirname, '..', 'downloads');
-      await fs.mkdir(downloadsDir, { recursive: true }); // Create the downloads directory if it doesn't exist
+    // **GridFS File Retrieval (If Using MongoDB Storage)**
+    const files = await gfs.find({ _id: fileId }).toArray();
+    if (!files || files.length === 0) {
+      return res.status(404).json({ message: "Resume file not found in storage." });
+    }
 
-      // Get the resume file name
-      const resumeFileName = path.basename(resumePath);
-
-      // Define the destination path for the resume
-      const destinationPath = path.join(downloadsDir, resumeFileName);
-
-      // Copy the resume file from 'uploads' to 'downloads' directory
-      await fs.copyFile(resumePath, destinationPath);
-
-      // Send response indicating that the resume is saved in the downloads directory
-      console.log("Resume file downloaded successfully")
-      res.status(200).json({
-          message: 'Resume downloaded and stored in the downloads directory successfully',
-          downloadPath: destinationPath,
-      });
-  } catch (error) {
-      console.error("Error fetching or saving resume:", error);
-      res.status(500).json({ message: 'Server error', error: error.message });
-  }
+    // Set response headers for file download
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename="${files[0].filename}"`,
+    });
+  // Stream file to response for download
+  const downloadStream = gfs.openDownloadStream(fileId);
+  downloadStream.pipe(res);
+  
+} catch (error) {
+  console.error("Error downloading resume:", error);
+  res.status(500).json({ message: "Server error", error: error.message });
+}
 };
 
 //get job applications

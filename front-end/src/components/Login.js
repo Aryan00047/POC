@@ -10,7 +10,7 @@ const Login = () => {
     password: ""
   })
   const [error, setError] = useState("");
-  const navigate = useNavigate();
+  let navigate = useNavigate();
   const url = "/api/user/login";
   const method = "post";
 
@@ -45,6 +45,14 @@ const Login = () => {
 
       try{
       const response = await Api({url, formData, method});
+
+      if (response.status === 404) {
+        setError("User not found. Redirecting to registration...");
+        setTimeout(() => {
+          navigate("/register");
+        }, 3000); 
+        return;
+      }
 
       if (response.status === 200) {
         const { token, role, userId } = response.data;

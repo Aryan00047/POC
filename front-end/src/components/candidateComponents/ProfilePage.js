@@ -22,35 +22,52 @@ const Profile = () => {
                 return;
             }
 
-            const response = await Api({ url, method, token });
+            try {
+                const response = await Api({ url, method, token });
 
-            if (response.error || response.status !== 200) {
-                setError(response.data?.message || "Failed to fetch profile.");
+                console.log("API Response:", response); // ✅ Debugging API response
+
+                if (response.status === 200 && response.data) {
+                    // ✅ Check if data is inside response.data.profile
+                    const profileData = response.data.profile || response.data;
+                    
+                    if (Object.keys(profileData).length > 0) {
+                        setProfile(profileData);
+                        setMessage("Profile loaded successfully!");
+                        setError(null);
+                    } else {
+                        setError("Profile not found. Please register.");
+                        setProfile(null);
+                    }
+                } else {
+                    setError("Failed to fetch profile.");
+                    setProfile(null);
+                }
+            } catch (err) {
+                console.error("Fetch Error:", err); // ✅ Debugging errors
+                setError("Failed to fetch profile.");
                 setProfile(null);
-            } else if (response.data) {
-                setProfile(response.data);
-                setError("");
             }
         }
 
         fetchData();
     }, []);
 
-    // Redirect to profile registration page if there's an error
+    // ✅ Prevent premature redirect by checking `profile`
     useEffect(() => {
-        if (error) {
+        if (error && !profile) {
             navigate("/candidateDashboard/registerProfile", { replace: true });
         }
-    }, [error, navigate]);
+    }, [error, profile, navigate]);
 
-    if (!profile) return <div>Loading...</div>;
+    if (!profile && !error) return <div>Loading...</div>;
 
     return (
         <div>
             <h2>Profile Details</h2>
-            <Error error={error}/>
-            if(!error){
-              setMessage(
+            <Error error={error} />
+
+            {profile && (
                 <>
                     <p><strong>Name:</strong> {profile.name}</p>
                     <p><strong>Email:</strong> {profile.email}</p>
@@ -64,10 +81,11 @@ const Profile = () => {
                     ) : (
                         <span>No Resume Uploaded</span>
                     )}</p>
-                </>)
-                }
+                </>
+            )}
 
-                <Success message={message}/>
+            <Success message={message} />
+
             <Link to="/candidateDashboard">
                 <button style={{ marginTop: "20px" }}>Back to Dashboard</button>
             </Link>

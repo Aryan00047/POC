@@ -19,15 +19,14 @@ async function Api({ url = "/", formData = {}, method = "get", token = "" }) {
         });
 
         return response;
-    } catch (error) {
+    }catch (error) {
         console.error("Error during API call:", error);
-
-        // If there's a response from the server, return it
+    
         if (error.response) {
-            return error.response;
+            console.error("Server Response:", error.response.data); // 🔍 Log exact backend message
+            return error.response; // Return response object
         }
-
-        // Otherwise, return a generic error object
+    
         return { error: true, message: "Network error or server not reachable" };
     }
 }

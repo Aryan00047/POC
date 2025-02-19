@@ -39,38 +39,39 @@ const RegisterProfile = () => {
     e.preventDefault();
     const errors = [];
     setMessage("");
-
-    if(!formData.dob || !formData.marks ||!formData.skills ||!formData.university ||!formData.resume){
-      errors.push("DOB, Marks, University, Skills - these fields are mandatory..." )
+  
+    if (!formData.dob || !formData.marks || !formData.skills || !formData.university || !formData.resume) {
+      errors.push("DOB, Marks, University, Skills - these fields are mandatory...");
     }
-
-    if(formData.working && (!formData.company || !formData.designation || !formData.workExperience)){
-      errors.push("You are working but not mentioned company name, work experience or designatiion...")
+  
+    if (formData.working && (!formData.company || !formData.designation || !formData.workExperience)) {
+      errors.push("You are working but not mentioned company name, work experience, or designation...");
     }
-
+  
     const token = localStorage.getItem("token");
     if (!token) {
       errors.push("Please log in to update your profile.");
     }
-
-    if(errors.length>0){
-      setError(errors.join(" "))
+  
+    if (errors.length > 0) {
+      setError(errors.join(" "));
       return;
-    }else{
+    }
+  
     try {
-      const response = await Api({url, formData, token, method});
-
-      const data = await response.json();
-      if (response.ok) {
-        setMessage("Profile updated successfully");
+      const response = await Api({ url, formData, token, method });
+  
+      if (response.status === 200 || response.status === 201) {
+        setMessage("Profile updated successfully!");
       } else {
-        setError(data.message);
+        setError(response.data.message || "An error occurred.");
       }
     } catch (error) {
       console.error("Error:", error);
       setError("An error occurred while updating the profile.");
     }
-  }};
+  };
+  
 
   return (
     <>
@@ -82,7 +83,7 @@ const RegisterProfile = () => {
         value={formData.dob}
         onChange={handleChange}
         placeholder="Date of Birth"
-        min={minDateString}
+        max={minDateString}
       />
       <input
         name="marks"

@@ -1,7 +1,7 @@
 const express = require("express");
 const { protectRoute } = require("../middleware/authMiddleware");
 const candidateController = require("../controllers/candidateController");
-const { upload } = require("../middleware/uploadMiddleware"); // Ensure correct import here
+const { upload, uploadToGridFS } = require("../middleware/uploadMiddleware"); // Ensure correct import here
 const router = express.Router();
 
 // Routes to handle candidate profile actions
@@ -15,6 +15,7 @@ router.put(
   "/profile",
   protectRoute(["candidate"]),
   upload.single("resume"),
+  uploadToGridFS,
   candidateController.updateProfile
 );
 router.get(
@@ -42,5 +43,6 @@ router.delete(
   protectRoute(["candidate"]),
   candidateController.deleteCandidateProfile
 );
+router.get("/profile/resume", protectRoute(["candidate"]), candidateController.getResume);
 
 module.exports = router;

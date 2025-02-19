@@ -7,7 +7,7 @@ const ApplicationsPage = () => {
   const [loading, setLoading] = useState(true); // State to track loading
   const [error, setError] = useState(null); // State to store errors
   const url = "/api/candidate/applications";
-  const method = "get"
+  const method = "get";
 
   // Fetch candidate applications from the API
   useEffect(() => {
@@ -20,14 +20,13 @@ const ApplicationsPage = () => {
           return;
         }
 
-        const response = await Api({url, method, token});
-
-        setApplications(response.data.applications); // Set applications data
+        const response = await Api({ url, method, token });
+        setApplications(response.data.applications || []); // Ensure it's always an array
       } catch (err) {
         console.error("Error fetching applications:", err);
         setError("Failed to fetch applications. Please try again later.");
       } finally {
-        setLoading(false); // Set loading to false
+        setLoading(false);
       }
     };
 
@@ -41,11 +40,11 @@ const ApplicationsPage = () => {
 
   // Render error state
   if (error) {
-    <Error error={error}/>
+    return <Error error={error} />; // Fixed missing return statement
   }
 
   // Render when no applications are available
-  if (applications.length === 0) {
+  if (!applications.length) {
     return <div>No applications found.</div>;
   }
 
@@ -55,11 +54,11 @@ const ApplicationsPage = () => {
       <h2>Your Applications</h2>
       {applications.map((application) => (
         <div key={application._id} className="application-card">
-          <h3>{application.jobId.designation}</h3>
-          <p>Company: {application.jobId.company}</p>
-          <p>Description: {application.jobId.jobDescription}</p>
-          <p>Experience Required: {application.jobId.experienceRequired}</p>
-          <p>Package: {application.jobId.package}</p>
+          <h3>{application.jobId?.designation || "Unknown Designation"}</h3>
+          <p>Company: {application.jobId?.company || "Unknown Company"}</p>
+          <p>Description: {application.jobId?.jobDescription || "No description available"}</p>
+          <p>Experience Required: {application.jobId?.experienceRequired || "N/A"}</p>
+          <p>Package: {application.jobId?.package || "Not mentioned"}</p>
           <p>Status: {application.status || "Pending"}</p>
         </div>
       ))}

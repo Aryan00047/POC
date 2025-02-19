@@ -10,7 +10,7 @@ const Register = () => {
     name: "",
     email: "",
     password: "",
-    role: "Candidate"
+    role: "candidate"
   });
 
   const [error, setError] = useState("");
@@ -23,7 +23,7 @@ const Register = () => {
   const handleClick = useCallback((e) => {
     setFormData((prevData) => ({
       ...prevData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value.trim()
     }))
   },[]);
 
@@ -46,7 +46,7 @@ const Register = () => {
       }
 
       if(formData.password && !/^(?=(?:.*[A-Z]){1,})(?=(?:.*[a-z]){1,})(?=(?:.*[0-9]){1,})(?=(?:.*[_@#$]){1,}).{7,}$/.test(formData.password)){
-        errors.push("Passowrd should contain altleast one Uppercase, lowercase, numeric and special char with min length being 7.");
+        errors.push("Password should contain altleast one Uppercase, lowercase, numeric and special char with min length being 7.");
       }
 
       if (errors.length > 0) {
@@ -55,24 +55,27 @@ const Register = () => {
       }
 
       try{
+      console.log("Registering with data:", formData);
+
       
       const response = await Api({ url, formData, method });
 
       if (response.status === 201) {
         setSuccess("Registration successful! Redirecting to login...");
+        setError("");
         setTimeout(() => {
           navigate("/login"); // Redirect to login page after success
-        }, 2000);
+        }, 2000)
       }
+      else if (response.status === 400 && response.data.message === "User already exists.") {
+          setError("User already exists. Redirecting to login...");
+          setSuccess("");
+          setTimeout(() => navigate("/login"), 3000); // Redirect after 3 seconds
+      }
+      
     } catch (err) {
-      console.error("Registration error:", err);
-      if (err.response) {
-        // Show backend error message if available
-        setError(err.response.data.message || "Registration failed.");
-      } else {
-        // Show a generic error message for other issues
-        setError("An unexpected error occurred. Please try again later.");
-      }
+      console.error("Registration error:", err);  
+      setError("An unexpected error occurred. Please try again later.");
     }
   };
 

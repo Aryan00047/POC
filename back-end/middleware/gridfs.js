@@ -11,23 +11,20 @@ const getGridFSBucket = () => {
   });
 };
 
-// Upload file to GridFS
-const uploadFileToGridFS = (filePath, fileName) => {
+const uploadFileToGridFS = (fileBuffer, fileName) => {
   return new Promise((resolve, reject) => {
     const bucket = getGridFSBucket();
     const uploadStream = bucket.openUploadStream(fileName);
-    const fileStream = fs.createReadStream(filePath);
+    
+    // Use Buffer instead of filePath
+    uploadStream.end(fileBuffer);
 
-    fileStream
-      .pipe(uploadStream)
-      .on("error", (err) => {
-        reject(err);
-      })
-      .on("finish", () => {
-        resolve(uploadStream.id); // Return the file id
-      });
+    uploadStream
+      .on("error", (err) => reject(err))
+      .on("finish", () => resolve(uploadStream.id)); // ✅ Return File ID
   });
 };
+
 
 // Download file from GridFS
 const downloadFileFromGridFS = (fileId, destinationPath) => {
