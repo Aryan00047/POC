@@ -152,63 +152,61 @@ const getProfile = async (req, res) => {
 
 const getResume = async (req, res) => {
   try {
-      if (!gfs) {
-          console.error("GridFS is not initialized");
-          return res.status(500).json({ error: "Server error. Try again later." });
-      }
+    if (!gfs) {
+      console.error("GridFS is not initialized");
+      return res.status(500).json({ error: "Server error. Try again later." });
+    }
 
-      // Extract candidate ID from authenticated user
-      const candidateId = req.user.userId; // Correct key name
-      const candidate = await User.findById(candidateId);
-      
-      if (!candidate || candidate.role !== "candidate") {
-        return res.status(403).json({ message: "Access denied. Not a candidate." });
-      }
-      
-      // Fetch candidate's profile
-      const profile = await Profile.findOne({ candidate_id: candidateId });
-      console.log("Profile Fetched:", profile);
-      
-      if (!profile) {
-        return res.status(404).json({ error: "Candidate profile not found" });
-      }      
+    const candidateId = req.user.userId; // Get authenticated user ID
+    const candidate = await User.findById(candidateId);
 
-      // Check if the candidate has a resume
-      if (!profile.resume) {
-          return res.status(404).json({ 
-              error: "Please upload resume first", 
-              uploadUrl: `${req.protocol}://${req.get("host")}/candidate/profile/resume/upload`
-          });
-      }
+    if (!candidate || candidate.role !== "candidate") {
+      return res.status(403).json({ message: "Access denied. Not a candidate." });
+    }
 
-      const fileId = new ObjectId(profile.resume); // Fix: Use `ObjectId` directly
+    // Fetch candidate's profile
+    const profile = await Profile.findOne({ candidate_id: candidateId });
+    if (!profile) {
+      return res.status(404).json({ error: "Candidate profile not found" });
+    }
 
-      // Find file metadata
-      const files = await gfs.find({ _id: fileId }).toArray();
-      if (!files.length) {
-          return res.status(404).json({ 
-              error: "Resume not found", 
-              message: "Please upload resume first", 
-              uploadUrl: `${req.protocol}://${req.get("host")}/candidate/profile/resume/upload`
-          });
-      }
+    // Check if resume exists
+    if (!profile.resume) {
+      return res.status(404).json({ error: "Please upload resume first" });
+    }
 
-      // Set headers for PDF response
-      res.set({
-          "Content-Type": "application/pdf",
-          "Content-Disposition": `inline; filename="${files[0].filename}"`,
-      });
+    const fileId = new ObjectId(req.params.id); // ✅ Ensure it's a valid ObjectId
 
-      // Stream file to response
-      const downloadStream = gfs.openDownloadStream(fileId);
-      downloadStream.pipe(res);
+    console.log("Fetching resume with ID:", fileId);
+
+    const files = await gfs.find({ _id: fileId }).toArray();
+    
+    if (!files || files.length === 0) {
+      return res.status(404).json({ error: "Resume not found" });
+    }
+
+    // ✅ Log file details for debugging
+    console.log("File found in GridFS:", files[0]);
+
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `inline; filename="${files[0].filename}"`,
+    });
+
+    const downloadStream = gfs.openDownloadStream(fileId);
+
+    // ✅ Handle errors when streaming
+    downloadStream.on("error", (err) => {
+      console.error("Error streaming file:", err);
+      return res.status(500).json({ error: "Error streaming file" });
+    });
+
+    downloadStream.pipe(res);
   } catch (error) {
-      console.error("Error fetching resume:", error);
-      res.status(500).json({ error: "Server error" });
+    console.error("Error fetching resume:", error);
+    res.status(500).json({ error: "Server error" });
   }
 };
-
-
 // Fetch all available jobs for candidates
 const fetchAvailableJobs = async (req, res) => {
   try {

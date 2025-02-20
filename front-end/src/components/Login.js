@@ -46,7 +46,7 @@ const Login = () => {
       try{
       const response = await Api({url, formData, method});
 
-      if (response.status === 404) {
+      if (response.status === 404 || response.status === 401) {
         setError("User not found. Redirecting to registration...");
         setTimeout(() => {
           navigate("/register");

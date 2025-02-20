@@ -3,45 +3,53 @@ const { GridFSBucket } = require("mongodb");
 const fs = require("fs");
 const path = require("path");
 
-// Initialize GridFS connection
+// Ensure MongoDB connection is ready before using GridFS
 const getGridFSBucket = () => {
-  const connection = mongoose.connection.db;
-  return new GridFSBucket(connection, {
-    bucketName: "uploads", // Define the name of the bucket
-  });
+  if (mongoose.connection.readyState !== 1) {
+    throw new Error("MongoDB connection is not established yet.");
+  }
+  return new GridFSBucket(mongoose.connection.db, { bucketName: "uploads" });
 };
 
+// Upload file to GridFS
 const uploadFileToGridFS = (fileBuffer, fileName) => {
   return new Promise((resolve, reject) => {
-    const bucket = getGridFSBucket();
-    const uploadStream = bucket.openUploadStream(fileName);
-    
-    // Use Buffer instead of filePath
-    uploadStream.end(fileBuffer);
+    try {
+      const bucket = getGridFSBucket();
+      const uploadStream = bucket.openUploadStream(fileName);
 
-    uploadStream
-      .on("error", (err) => reject(err))
-      .on("finish", () => resolve(uploadStream.id)); // ✅ Return File ID
+      uploadStream.end(fileBuffer);
+
+      uploadStream.on("error", (err) => reject(err));
+      uploadStream.on("finish", (file) => resolve(file._id.toString())); // ✅ Ensure ID is a string
+    } catch (error) {
+      reject(error);
+    }
   });
 };
 
-
-// Download file from GridFS
-const downloadFileFromGridFS = (fileId, destinationPath) => {
-  return new Promise((resolve, reject) => {
+// Stream file from GridFS to response
+const downloadFileFromGridFS = async (fileId, res) => {
+  try {
     const bucket = getGridFSBucket();
-    const downloadStream = bucket.openDownloadStream(fileId);
-    const fileWriteStream = fs.createWriteStream(destinationPath);
+    const _id = new mongoose.Types.ObjectId(fileId);
 
-    downloadStream
-      .pipe(fileWriteStream)
-      .on("error", (err) => {
-        reject(err);
-      })
-      .on("finish", () => {
-        resolve();
-      });
-  });
+    // Check if file exists
+    const file = await bucket.find({ _id }).toArray();
+    if (!file || file.length === 0) {
+      return res.status(404).json({ message: "File not found" });
+    }
+
+    // Set response headers
+    res.set("Content-Type", file[0].contentType);
+    res.set("Content-Disposition", `inline; filename="${file[0].filename}"`);
+
+    // Pipe the file stream to response
+    bucket.openDownloadStream(_id).pipe(res);
+  } catch (error) {
+    console.error("Error downloading file:", error);
+    res.status(500).json({ message: "Error fetching file" });
+  }
 };
 
 module.exports = {

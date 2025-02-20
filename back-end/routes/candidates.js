@@ -43,6 +43,6 @@ router.delete(
   protectRoute(["candidate"]),
   candidateController.deleteCandidateProfile
 );
-router.get("/profile/resume", protectRoute(["candidate"]), candidateController.getResume);
+router.get("/profile/resume/:id", protectRoute(["candidate"]), candidateController.getResume);
 
 module.exports = router;

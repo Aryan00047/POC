@@ -13,6 +13,38 @@ const Profile = () => {
     const url = "http://localhost:5000/api/candidate/profile";
     const method = "get";
 
+    const fetchResume = async (resumeId) => {
+        try {
+          const token = localStorage.getItem("token");
+          if (!token) {
+            alert("Please log in first.");
+            return;
+          }
+      
+          // ✅ Use Api.js for fetching resume
+          const response = await Api({
+            url: `http://localhost:5000/api/candidate/profile/resume/${resumeId}`,
+            method: "get",
+            token,
+            responseType: "blob", // ✅ Important: Ensure response is treated as binary data
+          });
+      
+          if (response.status !== 200) {
+            throw new Error("Failed to fetch resume");
+          }
+      
+          const file = new Blob([response.data], { type: "application/pdf" });
+      
+          // ✅ Create object URL and open the PDF
+          const fileURL = URL.createObjectURL(file);
+          window.open(fileURL, "_blank");
+      
+        } catch (error) {
+          console.error("Error fetching resume:", error);
+          alert("Error fetching resume");
+        }
+      };      
+      
     useEffect(() => {
         const token = localStorage.getItem("token");
 
@@ -28,7 +60,7 @@ const Profile = () => {
                 console.log("API Response:", response); // ✅ Debugging API response
 
                 if (response.status === 200 && response.data) {
-                    // ✅ Check if data is inside response.data.profile
+                    // Check if data is inside response.data.profile
                     const profileData = response.data.profile || response.data;
                     
                     if (Object.keys(profileData).length > 0) {
@@ -44,7 +76,7 @@ const Profile = () => {
                     setProfile(null);
                 }
             } catch (err) {
-                console.error("Fetch Error:", err); // ✅ Debugging errors
+                console.error("Fetch Error:", err); 
                 setError("Failed to fetch profile.");
                 setProfile(null);
             }
@@ -53,7 +85,7 @@ const Profile = () => {
         fetchData();
     }, []);
 
-    // ✅ Prevent premature redirect by checking `profile`
+    // Prevent premature redirect by checking `profile`
     useEffect(() => {
         if (error && !profile) {
             navigate("/candidateDashboard/registerProfile", { replace: true });
@@ -76,11 +108,16 @@ const Profile = () => {
                     <p><strong>CGPA:</strong> {profile.marks || "N/A"}</p>
                     <p><strong>Skills:</strong> {Array.isArray(profile.skills) ? profile.skills.join(", ") : "N/A"}</p>
                     <p><strong>Work Experience:</strong> {profile.workExperience || "N/A"}</p>
-                    <p><strong>Resume:</strong> {profile.resume ? (
-                        <button onClick={() => window.open(profile.resume, "_blank")}>View Resume</button>
+                    <p>
+                    <strong>Resume:</strong> 
+                    {profile.resume ? (
+                    <button onClick={() => fetchResume(profile.resume)}>
+                    View Resume
+                    </button>
                     ) : (
-                        <span>No Resume Uploaded</span>
-                    )}</p>
+                    <span>No Resume Uploaded</span>
+                    )}
+                    </p>
                 </>
             )}
 
