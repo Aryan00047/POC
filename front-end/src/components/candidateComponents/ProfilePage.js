@@ -21,12 +21,12 @@ const Profile = () => {
             return;
           }
       
-          // ✅ Use Api.js for fetching resume
+          // Use Api.js for fetching resume
           const response = await Api({
             url: `http://localhost:5000/api/candidate/profile/resume/${resumeId}`,
             method: "get",
             token,
-            responseType: "blob", // ✅ Important: Ensure response is treated as binary data
+            responseType: "blob", // Important: Ensure response is treated as binary data
           });
       
           if (response.status !== 200) {
@@ -35,7 +35,7 @@ const Profile = () => {
       
           const file = new Blob([response.data], { type: "application/pdf" });
       
-          // ✅ Create object URL and open the PDF
+          // Create object URL and open the PDF
           const fileURL = URL.createObjectURL(file);
           window.open(fileURL, "_blank");
       
@@ -57,7 +57,7 @@ const Profile = () => {
             try {
                 const response = await Api({ url, method, token });
 
-                console.log("API Response:", response); // ✅ Debugging API response
+                console.log("API Response:", response); // Debugging API response
 
                 if (response.status === 200 && response.data) {
                     // Check if data is inside response.data.profile

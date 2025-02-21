@@ -4,7 +4,7 @@ import Api from "./reusableComponents/api";
 import Button from "./reusableComponents/Button";
 import Error from "./reusableComponents/Error";
 
-const Login = () => {
+function Login(){
   const [formData, setFormData] = useState({
     email: "",
     password: ""

@@ -4,7 +4,11 @@ import {
   Route,
   Routes,
   Navigate,
+  useNavigate
 } from "react-router-dom";
+import { Provider } from "react-redux";
+import { store } from "./features/store";
+import { setNavigator } from "./utils/navigator";
 
 const HomePage = lazy(() => import("./components/HomePage"))
 const Login = lazy(() => import("./components/Login"))
@@ -20,6 +24,12 @@ const ViewApplications = lazy(() => import("./components/candidateComponents/App
 const DeleteAccount = lazy(() => import("./components/candidateComponents/DeleteAccountPage"))
 const Logout = lazy(()=> import("./components/Logout"));
 
+const NavigationHandler = () => {
+  const navigate = useNavigate();
+  setNavigator(navigate);
+  return null;
+};
+
 // PrivateRoute Component to handle role-based redirection
 const PrivateRoute = ({ element, requiredRole }) => {
   const userRole = localStorage.getItem("role"); // Simulate authentication
@@ -34,7 +44,9 @@ const PrivateRoute = ({ element, requiredRole }) => {
 
 function App() {
   return (
+    <Provider store={store}>
     <Router>{/*wraps application and provides routing capablities*/}
+    <NavigationHandler />
       <div>
         <Suspense fallback={<>Loading...</>}>
         <Routes>{/*A wrapper for all the route components*/ }
@@ -79,6 +91,7 @@ function App() {
         </Suspense>
       </div>
     </Router>
+    </Provider>
   );
 }
 
