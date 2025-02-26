@@ -1,30 +1,40 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { loginUser } from "../slices/authSlice";
 import Button from "./reusableComponents/Button";
 import Error from "./reusableComponents/Error";
 import Success from "./reusableComponents/Success";
 
-function Login(){
+function Login() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  
   const { error, success } = useSelector((state) => state.auth);
+  const { profile, loading } = useSelector((state) => state.candidate);
 
   const [formData, setFormData] = useState({
     password: "",
     email: ""
-  })
+  });
 
   const handleChange = (e) => {
     setFormData((prevData) => ({
       ...prevData,
       [e.target.name]: e.target.value.trim()
-    }))
+    }));
   };
-  
+
   const handleLogin = async (e) => {
     e.preventDefault();
-    dispatch(loginUser(formData)); 
-  }
+    dispatch(loginUser(formData)); // Dispatch login action
+  };
+
+  useEffect(() => {
+    if (profile && !loading) {
+      navigate("/candidateDashboard");
+    }
+  }, [profile, loading, navigate]);
 
   return (
     <div style={{ textAlign: "center", marginTop: "50px" }}>

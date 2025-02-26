@@ -1,128 +1,107 @@
-import {createSlice} from "@reduxjs/toolkit";
+import { createSlice } from "@reduxjs/toolkit";
+
+const initialState = {
+    profile: null,
+    loading: false,  // Use false instead of null for boolean values
+    error: null,
+    success: null,
+};
 
 const candidateSlice = createSlice({
     name: "candidate",
-    initialState:{
-        profile: null,
-        loading: null,
-        error: null,
-        success: null
-    },
-    reducers:{
-        candidateProfile: (state) =>{
+    initialState,
+    reducers: {
+        candidateProfile: (state) => {
             state.loading = true;
             state.error = null;
             state.success = null;
         },
-        candidateProfileFailure: (state, action) =>{
+        candidateProfileFailure: (state, action) => {
             state.loading = false;
             state.error = action.payload;
-            state.success = null; 
+            state.success = null;
         },
         candidateProfileSuccess: (state, action) => {
-            state.profile = action.payload;
+            state.profile = action.payload;  // Keep only profile data
             state.loading = false;
             state.error = null;
             state.success = "Profile fetched successfully!";
-        },        
-        candidateRegisterProfile: (state) =>{
-            state.loading = true;
-            state.error = null;
-            state.success = null;
         },
-        candidateRegisterProfileFailure: (state, action) =>{
+
+        candidateRegisterProfile: (state) => {
+            state.loading = true;
+        },
+        candidateRegisterProfileFailure: (state, action) => {
             state.loading = false;
             state.error = action.payload;
-            state.success = null; 
         },
-        candidateRegisterProfileSuccess: (state, action) =>{
-            state.profile = action.payload
+        candidateRegisterProfileSuccess: (state, action) => {
+            state.profile = action.payload;
             state.loading = false;
-            state.error = null;
-            state.success = "Profile registered sucessfully";
+            state.success = "Profile registered successfully!";
         },
-        candidateUpdateProfile: (state) =>{
+
+        candidateUpdateProfile: (state) => {
             state.loading = true;
-            state.error = null;
-            state.success = null;
         },
-        candidateUpdateProfileFailure: (state, action) =>{
+        candidateUpdateProfileFailure: (state, action) => {
             state.loading = false;
             state.error = action.payload;
-            state.success = null; 
         },
-        candidateUpdateProfileSuccess: (state, action) =>{
-            state.profile = action.payload
+        candidateUpdateProfileSuccess: (state, action) => {
+            state.profile = { ...state.profile, ...action.payload }; // Merge new data
             state.loading = false;
-            state.error = null;
-            state.success = action.payload;
+            state.success = "Profile updated successfully!";
         },
-        candidateJobs: (state) =>{
+
+        candidateJobs: (state) => {
             state.loading = true;
-            state.error = null;
-            state.success = null;
         },
-        candidateJobsFailure: (state, action) =>{
+        candidateJobsFailure: (state, action) => {
             state.loading = false;
             state.error = action.payload;
-            state.success = null; 
         },
-        candidateJobsSuccess: (state, action) =>{
-            state.profile = action.payload
+        candidateJobsSuccess: (state, action) => {
             state.loading = false;
-            state.error = null;
-            state.success = action.payload;
+            state.success = "Jobs fetched successfully!";
         },
-        candidateApplyForJobs: (state) =>{
+
+        candidateApplyForJobs: (state) => {
             state.loading = true;
-            state.error = null;
-            state.success = null;
         },
-         candidateApplyForJobsFailure: (state, action) =>{
+        candidateApplyForJobsFailure: (state, action) => {
             state.loading = false;
             state.error = action.payload;
-            state.success = null; 
         },
-         candidateApplyForJobsSuccess: (state, action) =>{
-            state.profile = action.payload
+        candidateApplyForJobsSuccess: (state, action) => {
             state.loading = false;
-            state.error = null;
-            state.success = action.payload;
+            state.success = "Job application submitted!";
         },
-        candidateApplication: (state) =>{
+
+        candidateApplication: (state) => {
             state.loading = true;
-            state.error = null;
-            state.success = null;
         },
-         candidateApplicationFailure: (state, action) =>{
+        candidateApplicationFailure: (state, action) => {
             state.loading = false;
             state.error = action.payload;
-            state.success = null; 
         },
-         candidateApplicationSuccess: (state, action) =>{
-            state.profile = action.payload
+        candidateApplicationSuccess: (state, action) => {
             state.loading = false;
-            state.error = null;
-            state.success = action.payload;
+            state.success = "Applications fetched successfully!";
         },
-        candidateDeleteAccount: (state) =>{
+
+        candidateDeleteAccount: (state) => {
             state.loading = true;
-            state.error = null;
-            state.success = null;
         },
-        candidateDeleteAccountFailure: (state, action) =>{
+        candidateDeleteAccountFailure: (state, action) => {
             state.loading = false;
             state.error = action.payload;
-            state.success = null; 
         },
-        candidateDeleteAccountSuccess: (state, action) =>{
-            state.profile = action.payload
-            state.loading = false;
-            state.error = null;
-            state.success = action.payload;
+        candidateDeleteAccountSuccess: (state) => {
+            return initialState; // Reset the state on account deletion
         }
     }
-})
+});
 
-export const candidateActions = candidateSlice.actions;// dynamically export actions
+export const candidateActions = candidateSlice.actions; // Export actions dynamically
 export default candidateSlice.reducer;

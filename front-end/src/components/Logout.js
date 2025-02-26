@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { logoutUser } from "../slices/authSlice";
+import { logoutRequest } from "../slices/authSlice";
 import { useNavigate } from "react-router-dom";
 
 function Logout() {
@@ -10,7 +10,7 @@ function Logout() {
   const logoutMessage = useSelector((state) => state.auth.message);
 
   useEffect(() => {
-    dispatch(logoutUser()); // Dispatch logout action
+    dispatch(logoutRequest()); // Dispatch logout action
 
     //Prevent back navigation
     window.history.pushState(null, "", window.location.href);

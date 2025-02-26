@@ -39,21 +39,29 @@ const authSlice = createSlice({
       state.error = action.payload;
       state.success = null;
     },
-    logoutUser: (state) =>{
+    logoutRequest: (state) => {
       state.loading = true;
       state.success = null;
       state.error = null;
     },
-    logoutFailure: (state, action) =>{
+    logoutFailure: (state, action) => {
       state.loading = false;
       state.success = null;
       state.error = action.payload;
     },
-    logoutSuccess: (state, action) =>{
+    logoutSuccess: (state, action) => {
       state.loading = false;
       state.success = action.payload;
       state.error = null;
-    }
+    
+      //Clear Local Storage
+      localStorage.removeItem("token"); 
+      localStorage.removeItem("persist:root"); // If using redux-persist
+    
+      //Reset Redux State
+      state.user = null;
+    },
+    
   },
 });
 
@@ -63,7 +71,7 @@ export const { registerUser,
    loginUser,
    loginFailure,
    loginSuccess,
-   logoutUser,
+   logoutRequest,
    logoutFailure,
    logoutSuccess
 } = authSlice.actions;

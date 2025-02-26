@@ -38,17 +38,47 @@
 
 // export default CandidateDashboard;
 
-import React from "react";
-import { useDispatch } from "react-redux";
-import { navigateTo } from "../../slices/navSlice";
+import { useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { candidateActions } from "../../slices/candidateSlice";
 import { Outlet } from "react-router-dom";
+import { navigateTo } from "../../slices/navSlice";
 
 const CandidateDashboard = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { profile, loading, error } = useSelector((state) => state.candidate);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token && !profile && !loading) {
+      dispatch(candidateActions.candidateProfile());
+    }
+  }, [profile, loading, dispatch]);
+  
+
+  useEffect(() => {
+    if (!loading && !profile && error) {
+      console.log("Profile not found, redirecting to register page...");
+      navigate("/candidateDashboard/registerProfile", { replace: true });
+    }
+  }, [profile, loading, error, navigate]);
+
+  if (loading) {
+    return <p>Loading profile...</p>;
+  }
+
+  if (!profile) {
+    return <p>Error loading profile. Please try again.</p>;
+  }
 
   return (
     <div>
       <h1>Welcome to the Candidate Dashboard</h1>
+      <h1>Welcome, {profile.name}!</h1>
+      <p>Email: {profile.email}</p>
+
       <nav>
         <ul>
           <li>

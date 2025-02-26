@@ -131,37 +131,33 @@
 // };
 
 // export default Profile;
-
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { candidateActions } from "../../slices/candidateSlice";
-import { navigateTo } from "../../slices/navSlice";
-import Api from "../reusableComponents/api";
-import Success from "../reusableComponents/Success"
-import Error from "../reusableComponents/Error"
+import Success from "../reusableComponents/Success";
+import Error from "../reusableComponents/Error";
+import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
   const dispatch = useDispatch();
   const { profile, error, success, loading } = useSelector((state) => state.candidate || {});
   const { path } = useSelector((state) => state.navigation);
 
-  useEffect(() => {
-    dispatch(candidateActions.candidateProfile()); // Fetch profile on mount
-  }, [dispatch]);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (error === "Profile not found.") {
-      dispatch(navigateTo("/candidateDashboard/registerProfile")); // Redirect if profile is missing
+    if (!profile && !loading) {
+      console.log("Fetching profile...");
+      dispatch(candidateActions.candidateProfile());
     }
-  }, [error, dispatch]);
+  }, [profile, loading, dispatch]);
 
   useEffect(() => {
-    if (path) {
-      dispatch(navigateTo(path)); // Handle navigation via Redux state
+    if (path && path !== window.location.pathname) {
+      navigate(path);
     }
-  }, [path, dispatch]);
+  }, [path, navigate]);
 
-  // Fetch Resume Function
   const handleFetchResume = async (resumeId) => {
     try {
       const token = localStorage.getItem("token");
@@ -170,17 +166,15 @@ const Profile = () => {
         return;
       }
 
-      const response = await Api({
-        url: `http://localhost:5000/api/candidate/profile/resume/${resumeId}`,
-        method: "get",
-        token,
-        responseType: "blob",
+      const response = await fetch(`http://localhost:5000/api/candidate/profile/resume/${resumeId}`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (response.status !== 200) throw new Error("Failed to fetch resume");
+      if (!response.ok) throw new Error("Failed to fetch resume");
 
-      const file = new Blob([response.data], { type: "application/pdf" });
-      const fileURL = URL.createObjectURL(file);
+      const blob = await response.blob();
+      const fileURL = URL.createObjectURL(blob);
       window.open(fileURL, "_blank");
     } catch (error) {
       console.error("Error fetching resume:", error);
@@ -188,7 +182,8 @@ const Profile = () => {
     }
   };
 
-  if(loading) return <>Loading...</>
+  if (loading) return <>Loading...</>;
+
   return (
     <div>
       <h2>Profile Details</h2>
@@ -212,9 +207,6 @@ const Profile = () => {
         </>
       )}
       <Success message={success} />
-      {/* <Link to="/candidateDashboard">
-        <button style={{ marginTop: "20px" }}>Back to Dashboard</button>
-      </Link> */}
     </div>
   );
 };

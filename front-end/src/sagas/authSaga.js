@@ -1,5 +1,5 @@
 import { call, put, takeLatest } from "redux-saga/effects";
-import { registerUser, registerSuccess, registerFailure, loginUser, loginSuccess, loginFailure } from "../slices/authSlice";
+import { registerUser, registerSuccess, registerFailure, loginUser, loginSuccess, loginFailure, logoutRequest, logoutFailure, logoutSuccess } from "../slices/authSlice";
 import { navigate } from "../utils/navigator";
 import Api from "../components/reusableComponents/api";
 
@@ -80,8 +80,30 @@ function* handleLogin(action){
   }
 }
 
+function* handleLogout() {
+  try {
+    // If your backend requires a logout API call, keep this, otherwise remove
+    yield call(Api, { url: "/api/user/logout", method: "POST" });
+
+    // Clear localStorage
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("userId");
+
+    // Dispatch success action
+    yield put(logoutSuccess("Logged out successfully"));
+
+    //Redirect to login page
+    yield call(navigate, "/login"); // Corrected navigation
+  } catch (error) {
+    yield put(logoutFailure(error.message || "Logout failed"));
+  }
+}
+
+
 // Watcher Saga
 export function* watchAuth() {
   yield takeLatest(loginUser.type, handleLogin);
   yield takeLatest(registerUser.type, handleRegister);
+  yield takeLatest(logoutRequest.type, handleLogout)
 }
