@@ -2,7 +2,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import createSagaMiddleware from "redux-saga";
 import authReducer from "../slices/authSlice";
 import navReducer from "../slices/navSlice";
-import { watchRegister } from "../sagas/authSaga";
+import { watchAuth } from "../sagas/authSaga";
 import { watchNavigation } from "../sagas/navSaga";
 
 const sagaMiddleware = createSagaMiddleware();
@@ -15,7 +15,7 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(sagaMiddleware),
 });
 
-sagaMiddleware.run(watchRegister);
+sagaMiddleware.run(watchAuth);
 sagaMiddleware.run(watchNavigation);
 
 export default store;

@@ -41,7 +41,7 @@ async function Api({ url = "/", formData = {}, method = "get", token = "", respo
       "Content-Type": "application/json",
     };
 
-    // ✅ Add Authorization header if token exists
+    // Add Authorization header if token exists
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
     }
@@ -51,7 +51,7 @@ async function Api({ url = "/", formData = {}, method = "get", token = "", respo
       method: method.toLowerCase(),
       data: method.toLowerCase() !== "get" ? formData : undefined,
       headers,
-      responseType, // ✅ Allow binary response (e.g., blob for PDFs)
+      responseType, // Allow binary response (e.g., blob for PDFs)
     });
 
     return response;

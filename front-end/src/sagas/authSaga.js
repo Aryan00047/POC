@@ -1,7 +1,20 @@
 import { call, put, takeLatest } from "redux-saga/effects";
-import { registerUser, registerSuccess, registerFailure } from "../slices/authSlice";
+import { registerUser, registerSuccess, registerFailure, loginUser, loginSuccess, loginFailure } from "../slices/authSlice";
 import { navigate } from "../utils/navigator";
 import Api from "../components/reusableComponents/api";
+
+function validateLoginData(formData) {
+  const { email, password } = formData;
+
+  if (!email || !password) return "Email and Password are required.";
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const passwordRegex = /^(?=(?:.*[A-Z]){1,})(?=(?:.*[a-z]){1,})(?=(?:.*[0-9]){1,})(?=(?:.*[_@#$]){1,}).{7,}$/;
+
+  if (!emailRegex.test(email)) return "Invalid email format.";
+  if(!passwordRegex.test(password)) return "Passowrd should contain altleast one Uppercase, lowercase, numeric and special char with min length being 7";
+
+  return null; // No validation errors
+}
 
 function* handleRegister(action) {
   try {
@@ -21,7 +34,54 @@ function* handleRegister(action) {
   }
 }
 
+function* handleLogin(action){
+  try {
+    const url = "/api/user/login";
+    const method = "post";
+    const formData = action.payload;
+
+    const validationError = validateLoginData(formData);
+    if (validationError) {
+      yield put(loginFailure(validationError));
+      return;
+    }
+
+    const response = yield call(Api, { url, formData, method });
+
+  if (response.status === 200) {
+    const { token, role, userId } = response.data;
+
+    // **Save token, role, and userId to localStorage**
+    localStorage.setItem("token", token);
+    localStorage.setItem("role", role);
+    localStorage.setItem("userId", userId);
+
+    // **Dispatch Success Action**
+    yield put(loginSuccess(response.data));
+
+    // **Redirect Based on User Role**
+    if (role === "admin") {
+      yield call(navigate, "/AdminDashboard");
+    } else if (role === "hr") {
+      yield call(navigate, "/HrDashboard");
+    } else if (role === "candidate") {
+      yield call(navigate, "/CandidateDashboard");
+    }
+    } else if (response.status === 400 && response.data.message === "User does not exist.") {
+      yield put(loginFailure("User does not exist. Redirecting to register..."));
+      yield call(navigate, "/register"); // Redirect if user not found
+    } else if (response.status === 400) {
+      yield put(loginFailure("Incorrect email or password."));
+    } else {
+      yield put(loginFailure("An unexpected error occurred."));
+    }
+  } catch (error) {
+    yield put(loginFailure("Server error. Please try again later."));
+  }
+}
+
 // Watcher Saga
-export function* watchRegister() {
+export function* watchAuth() {
+  yield takeLatest(loginUser.type, handleLogin);
   yield takeLatest(registerUser.type, handleRegister);
 }
