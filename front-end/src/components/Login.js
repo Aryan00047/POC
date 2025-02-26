@@ -10,7 +10,7 @@ function Login(){
   const { error, success } = useSelector((state) => state.auth);
 
   const [formData, setFormData] = useState({
-    name: "",
+    password: "",
     email: ""
   })
 

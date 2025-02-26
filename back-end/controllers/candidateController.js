@@ -136,7 +136,7 @@ const getProfile = async (req, res) => {
 
     if (!profile) {
       console.log("Profile not found...")
-      return res.status(404).json({ message: "Profile not found." });
+      return res.status(404).json({ message: "Profile not found" });
     }
 
     console.log("Profile fetched sucessfully: ", profile)
@@ -185,7 +185,7 @@ const getResume = async (req, res) => {
       return res.status(404).json({ error: "Resume not found" });
     }
 
-    // ✅ Log file details for debugging
+    // Log file details for debugging
     console.log("File found in GridFS:", files[0]);
 
     res.set({
@@ -195,7 +195,7 @@ const getResume = async (req, res) => {
 
     const downloadStream = gfs.openDownloadStream(fileId);
 
-    // ✅ Handle errors when streaming
+    // Handle errors when streaming
     downloadStream.on("error", (err) => {
       console.error("Error streaming file:", err);
       return res.status(500).json({ error: "Error streaming file" });
