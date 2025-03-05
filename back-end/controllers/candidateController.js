@@ -10,6 +10,7 @@ const { newApplicationEmailTemplate } = require("../middleware/emailTemplates");
 const GridFSBucket = mongoose.mongo.GridFSBucket;
 const conn = mongoose.connection;
 const { ObjectId } = require("mongoose").Types;
+const {uploadFileToGridFS} = require("../middleware/gridfs");
 let gfs;
 
 // Initialize GridFSBucket once the MongoDB connection is open
@@ -17,7 +18,6 @@ conn.once("open", () => {
     gfs = new GridFSBucket(conn.db, { bucketName: "uploads" }); // Ensure "uploads" matches your storage bucket
     console.log("GridFSBucket initialized");
 });
-
 const registerProfile = async (req, res) => {
   const {
     dob,
@@ -29,12 +29,19 @@ const registerProfile = async (req, res) => {
     workExperience,
     working,
   } = req.body;
+
   const candidateId = req.user.userId;
   const resumeBuffer = req.file ? req.file.buffer : null;
   const resumeName = req.file ? req.file.originalname : null;
 
   try {
-    // Check if user is a candidate
+    // Ensure MongoDB connection is open
+    if (!gfs) {
+      console.error("GridFSBucket is not initialized!");
+      return res.status(500).json({ message: "Server error: GridFSBucket is not initialized." });
+    }
+
+    // Check if user exists and is a candidate
     const candidate = await User.findById(candidateId);
     if (!candidate || candidate.role !== "candidate") {
       return res.status(403).json({ message: "Access denied. Not a candidate." });
@@ -46,26 +53,25 @@ const registerProfile = async (req, res) => {
       return res.status(400).json({ message: "Profile already exists. Use PUT to update." });
     }
 
-    // Ensure GridFS is initialized
-    if (!gfs) {
-      console.error("GridFSBucket is not initialized!");
-      return res.status(500).json({ message: "Server error: GridFSBucket is not initialized." });
+    // Validate required fields
+    if (!dob || !marks || !university || !skills) {
+      return res.status(400).json({ message: "Missing required fields." });
     }
 
     let resumeId = null;
     if (resumeBuffer) {
       const uploadStream = gfs.openUploadStream(resumeName, { contentType: "application/pdf" });
 
-      // Wait for the upload to complete
       await new Promise((resolve, reject) => {
-        uploadStream.end(resumeBuffer, (err) => {
-          if (err) {
-            console.error("Error uploading resume to GridFS:", err);
-            return reject(err);
-          }
+        uploadStream.on("finish", () => {
           resumeId = uploadStream.id;
           resolve();
         });
+        uploadStream.on("error", (err) => {
+          console.error("Error uploading resume to GridFS:", err);
+          reject(err);
+        });
+        uploadStream.end(resumeBuffer);
       });
     }
 
@@ -99,6 +105,11 @@ const updateProfile = async (req, res) => {
   const candidateId = req.user.userId;
 
   try {
+    if (!gfs) {
+      console.error("GridFSBucket is not initialized!");
+      return res.status(500).json({ message: "Server error: GridFS not initialized." });
+    }
+
     const candidate = await User.findById(candidateId);
     if (!candidate || candidate.role !== "candidate") {
       return res.status(403).json({ message: "Access denied. Not a candidate." });
@@ -110,7 +121,9 @@ const updateProfile = async (req, res) => {
     }
 
     // Keep old resume if no new file is uploaded
-    const updatedResume = req.fileId ? req.fileId.toString() : existingProfile.resume;
+    const updatedResume = req.file
+    ? await uploadFileToGridFS(req.file.buffer, req.file.originalname, gfs)
+    : existingProfile.resume;  
 
     const updateFields = {
       dob, marks, university, skills, company, designation, workExperience, working, resume: updatedResume,
@@ -175,7 +188,7 @@ const getResume = async (req, res) => {
       return res.status(404).json({ error: "Please upload resume first" });
     }
 
-    const fileId = new ObjectId(req.params.id); // ✅ Ensure it's a valid ObjectId
+    const fileId = new ObjectId(req.params.id); // Ensure it's a valid ObjectId
 
     console.log("Fetching resume with ID:", fileId);
 

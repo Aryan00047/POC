@@ -34,7 +34,7 @@ function* handleRegister(action) {
   }
 }
 
-function* handleLogin(action){
+function* handleLogin(action) {
   try {
     const url = "/api/user/login";
     const method = "post";
@@ -48,32 +48,30 @@ function* handleLogin(action){
 
     const response = yield call(Api, { url, formData, method });
 
-  if (response.status === 200) {
-    const { token, role, userId } = response.data;
+    if (response.status === 200) {
+      const { token, role, userId } = response.data;
 
-    // **Save token, role, and userId to localStorage**
-    localStorage.setItem("token", token);
-    localStorage.setItem("role", role);
-    localStorage.setItem("userId", userId);
+      localStorage.setItem("token", token);
+      localStorage.setItem("role", role);
+      localStorage.setItem("userId", userId);
 
-    // **Dispatch Success Action**
-    yield put(loginSuccess(response.data));
+      yield put(loginSuccess(response.data));
 
-    // **Redirect Based on User Role**
-    if (role === "admin") {
-      yield call(navigate, "/AdminDashboard");
-    } else if (role === "hr") {
-      yield call(navigate, "/HrDashboard");
-    } else if (role === "candidate") {
-      yield call(navigate, "/CandidateDashboard");
-    }
-    } else if (response.status === 400 && response.data.message === "User does not exist.") {
+      if (role === "admin") {
+        yield call(navigate, "/AdminDashboard");
+      } else if (role === "hr") {
+        yield call(navigate, "/HrDashboard");
+      } else if (role === "candidate") {
+        //  **Only Navigate Without Fetching Profile**
+        yield call(navigate, "/CandidateDashboard");
+      }
+    } else if (response.status === 404) {
       yield put(loginFailure("User does not exist. Redirecting to register..."));
-      yield call(navigate, "/register"); // Redirect if user not found
+      yield call(navigate, "/register");
     } else if (response.status === 400) {
       yield put(loginFailure("Incorrect email or password."));
     } else {
-      yield put(loginFailure("An unexpected error occurred."));
+      yield put(loginFailure("Unexpected error occured"));
     }
   } catch (error) {
     yield put(loginFailure("Server error. Please try again later."));

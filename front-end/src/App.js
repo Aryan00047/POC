@@ -6,8 +6,6 @@ import {
   Navigate,
   useNavigate
 } from "react-router-dom";
-import { Provider } from "react-redux";
-import { store } from "./features/store";
 import { setNavigator } from "./utils/navigator";
 
 const HomePage = lazy(() => import("./components/HomePage"))
@@ -44,7 +42,7 @@ const PrivateRoute = ({ element, requiredRole }) => {
 
 function App() {
   return (
-    <Provider store={store}>
+    // <Provider store={store}>
     <Router>{/*wraps application and provides routing capablities*/}
     <NavigationHandler />
       <div>
@@ -91,7 +89,7 @@ function App() {
         </Suspense>
       </div>
     </Router>
-    </Provider>
+    // </Provider>
   );
 }
 

@@ -2,6 +2,8 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
     profile: null,
+    updatedProfile: null,
+    fetchProfile: null,
     loading: false,  // Use false instead of null for boolean values
     error: null,
     success: null,
@@ -11,18 +13,20 @@ const candidateSlice = createSlice({
     name: "candidate",
     initialState,
     reducers: {
-        candidateProfile: (state) => {
+        candidateProfileRequest: (state) => {
             state.loading = true;
             state.error = null;
             state.success = null;
+            state.fetchProfile = null;
         },
         candidateProfileFailure: (state, action) => {
             state.loading = false;
             state.error = action.payload;
             state.success = null;
+            state.fetchProfile = null;
         },
         candidateProfileSuccess: (state, action) => {
-            state.profile = action.payload;  // Keep only profile data
+            state.fetchProfile = action.payload;
             state.loading = false;
             state.error = null;
             state.success = "Profile fetched successfully!";
@@ -30,15 +34,19 @@ const candidateSlice = createSlice({
 
         candidateRegisterProfile: (state) => {
             state.loading = true;
+            state.profile = null;
+            state.error = null;
         },
         candidateRegisterProfileFailure: (state, action) => {
             state.loading = false;
             state.error = action.payload;
+            state.profile = null;
         },
         candidateRegisterProfileSuccess: (state, action) => {
             state.profile = action.payload;
             state.loading = false;
             state.success = "Profile registered successfully!";
+            state.error = null;
         },
 
         candidateUpdateProfile: (state) => {
@@ -55,7 +63,9 @@ const candidateSlice = createSlice({
         },
 
         candidateJobs: (state) => {
+            if(state.profile) return;
             state.loading = true;
+            state.error = null;
         },
         candidateJobsFailure: (state, action) => {
             state.loading = false;
@@ -64,6 +74,7 @@ const candidateSlice = createSlice({
         candidateJobsSuccess: (state, action) => {
             state.loading = false;
             state.success = "Jobs fetched successfully!";
+            state.error = null;
         },
 
         candidateApplyForJobs: (state) => {

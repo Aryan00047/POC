@@ -1,11 +1,15 @@
-import { takeEvery, call } from "redux-saga/effects";
+import { takeLatest, call } from "redux-saga/effects";
 import { navigateTo } from "../slices/navSlice";
 import { navigate } from "../utils/navigator"; // Import the helper
 
 function* handleNavigation(action) {
-  yield call(navigate, action.payload); // Use Redux-Saga `call`
+  try {
+    yield call(navigate, action.payload); // Using navigate function to redirect
+  } catch (error) {
+    console.error("Navigation failed:", error);
+  }
 }
 
 export function* watchNavigation() {
-  yield takeEvery(navigateTo.type, handleNavigation);
+  yield takeLatest(navigateTo.type, handleNavigation);
 }

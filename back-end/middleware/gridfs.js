@@ -21,7 +21,7 @@ const uploadFileToGridFS = (fileBuffer, fileName) => {
       uploadStream.end(fileBuffer);
 
       uploadStream.on("error", (err) => reject(err));
-      uploadStream.on("finish", (file) => resolve(file._id.toString())); // ✅ Ensure ID is a string
+      uploadStream.on("finish", (file) => resolve(uploadStream.id.toString())); // Ensure ID is a string
     } catch (error) {
       reject(error);
     }

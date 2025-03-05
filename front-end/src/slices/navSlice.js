@@ -2,10 +2,12 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const navSlice = createSlice({
   name: "navigation",
-  initialState: { path: "/" },
+  initialState: {
+    currentPath: null, // Store navigation state
+  },
   reducers: {
     navigateTo: (state, action) => {
-      state.path = action.payload;
+      state.currentPath = action.payload; // Only store the string path
     },
   },
 });
