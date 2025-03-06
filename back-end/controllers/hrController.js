@@ -61,6 +61,33 @@ const postJob = async (req, res) => {
     }
   };
 
+// Fetch all available jobs for candidates
+const fetchAvailableJobs = async (req, res) => {
+  try {
+    // Find all jobs that are currently available (you may want to add filters for availability)
+    const jobs = await Job.find().sort({ jobId: 1 }); // Sorting by jobId to show them in order
+
+    if (!jobs.length) {
+      console.log("No jobs Available currently")
+      return res
+        .status(404)
+        .json({ message: "No jobs available at the moment." });
+    }
+
+    console.log("Jobs fetched sucessfully...")
+    res.status(200).json({
+      message: "Available jobs fetched successfully",
+      jobs,
+    });
+  } catch (error) {
+    console.error("Error fetching jobs:", error);
+    res.status(500).json({
+      message: "Error fetching available jobs",
+      error: error.message,
+    });
+  }
+};
+
 const fetchCandidates = async (req, res) => {
   try {
     console.log("Fetch candidates hit...");
@@ -330,6 +357,7 @@ const deleteHrProfile = async (req, res) => {
 
   module.exports = { 
     postJob,
+    fetchAvailableJobs,
     fetchCandidates,
     fetchCandidateProfile,
     downloadResumeHR,

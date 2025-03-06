@@ -1,16 +1,16 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { candidateActions } from "../../slices/candidateSlice";
+import { hrActions } from "../../slices/hrSlice";
 import Error from "../reusableComponents/Error";
 
-const JobsPage = () => {
+const FetchJobs = () => {
   const dispatch = useDispatch();
-  const { jobs, loading, error, applying, applicationError, successMessage } = useSelector(
-    (state) => state.candidate
+  const { jobs, loading, error } = useSelector(
+    (state) => state.hr
   );
 
   useEffect(() => {
-    dispatch(candidateActions.candidateJobs());
+    dispatch(hrActions.jobs());
   }, [dispatch]);
 
   if (loading) return <div>Loading jobs...</div>;
@@ -34,15 +34,6 @@ const JobsPage = () => {
               <p>{job.jobDescription}</p>
               <p>Experience Required: {job.experienceRequired}</p>
               <p>Package: {job.package}</p>
-              <button
-                onClick={() => {
-                  console.log("Applying for job ID:", job.jobId);
-                  dispatch(candidateActions.candidateApplyForJobs({ jobId: job.jobId }));
-                }}
-                disabled={applying}
-              >
-                {applying ? "Applying..." : "Apply"}
-              </button>
             </div>
           ))}
         </div>
@@ -51,4 +42,4 @@ const JobsPage = () => {
   );
 };
 
-export default JobsPage;
+export default FetchJobs;

@@ -20,6 +20,7 @@ const UpdateProfile = lazy(() => import("./components/candidateComponents/Update
 const ViewJobs = lazy(() => import("./components/candidateComponents/JobsPage"))
 const ViewApplications = lazy(() => import("./components/candidateComponents/ApplicationsPage"))
 const DeleteAccount = lazy(() => import("./components/candidateComponents/DeleteAccountPage"))
+const PostJob = lazy(() => import("./components/hrComponents/PostJob"))
 const Logout = lazy(()=> import("./components/Logout"));
 
 const NavigationHandler = () => {
@@ -84,7 +85,9 @@ function App() {
             element={
               <PrivateRoute element={<HrDashboard />} requiredRole="hr" />
             }
-          />
+          >
+          <Route path="postJob" element={<PostJob />}/>
+          </Route>
         </Routes>
         </Suspense>
       </div>

@@ -249,98 +249,106 @@ const fetchAvailableJobs = async (req, res) => {
 
 const applyForJob = async (req, res) => {
   try {
-    const { jobId } = req.params; // Job ID from route params
-    const candidateId = req.user.userId; // Candidate ID from JWT token
+      console.log("Request Params:", req.params);
+      const { jobId } = req.params;
+      const candidateId = req.user.userId;
 
-    // Validate numeric jobId
-    const numericJobId = parseInt(jobId, 10);
-    if (isNaN(numericJobId)) {
-      return res
-        .status(400)
-        .json({ error: "Invalid jobId format. Must be a number." });
-    }
+      // Validate jobId
+      const numericJobId = parseInt(jobId, 10);
+      if (isNaN(numericJobId)) {
+          return res.status(400).json({ error: "Invalid jobId format. Must be a number." });
+      }
 
-    // Fetch the job details
-    const job = await Job.findOne({ jobId: numericJobId });
-    if (!job) {
-      console.log("Job not found...")
-      return res.status(404).json({ error: "Job not found" });
-    }
+      // Fetch job details
+      const job = await Job.findOne({ jobId: numericJobId });
+      if (!job) {
+          return res.status(404).json({ error: "Job not found" });
+      }
 
-    // Fetch HR's email from the User model
-    const hr = await User.findById(job.hrId);
-    if (!hr || hr.role !== "hr") {
-      console.log("HR associated with this job not found to send email")
-      return res
-        .status(404)
-        .json({ error: "HR associated with this job not found." });
-    }
+      // Fetch HR's email
+      const hr = await User.findById(job.hrId);
+      if (!hr || hr.role !== "hr") {
+          return res.status(404).json({ error: "HR associated with this job not found." });
+      }
 
-    // Fetch the candidate's profile
-    const profile = await Profile.findOne({ candidate_id: candidateId });
-    if (!profile) {
-      console.log("Profile not found. Please update it...")
-      return res.status(404).json({
-        error: "Profile not found. Please update your profile before applying.",
+      // Fetch candidate profile
+      const profile = await Profile.findOne({ candidate_id: candidateId });
+      if (!profile) {
+          return res.status(404).json({
+              error: "Profile not found. Please update your profile before applying."
+          });
+      }
+
+      // Check for duplicate application
+      const existingApplication = await Application.findOne({ candidateId, jobId: job._id });
+      if (existingApplication) {
+          return res.status(400).json({ error: "You have already applied for this job." });
+      }
+
+      // Create and save new application
+      const newApplication = new Application({
+          jobId: job._id,
+          numericJobId: job.jobId,
+          candidateId,
+          name: profile.name,
+          email: profile.email,
+          skills: profile.skills,
+          resume: profile.resume, // Keep reference to GridFS ID
+          workExperience: profile.workExperience
       });
-    }
 
-    // Check for duplicate application
-    const existingApplication = await Application.findOne({
-      candidateId,
-      jobId: job._id,
-    });
-    if (existingApplication) {
-      console.log("Already applied for current job...")
-      return res.status(400).json({
-        error: "You have already applied for this job.",
+      await newApplication.save();
+
+      const resumeId = profile.resume;
+      if (!resumeId) {
+          return res.status(400).json({ error: "Resume file not found in GridFS." });
+      }
+
+      // Convert resumeId to ObjectId if needed
+      const fileId = new ObjectId(resumeId);
+
+      // Setup GridFS Bucket
+      const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
+          bucketName: "uploads"
       });
-    }
 
-    // Create and save the new application
-    const newApplication = new Application({
-      jobId: job._id,
-      numericJobId: job.jobId,
-      candidateId,
-      name: profile.name,
-      email: profile.email,
-      skills: profile.skills,
-      resume: profile.resume,
-      workExperience: profile.workExperience,
-    });
+      // Create email template
+      const emailTemplate = newApplicationEmailTemplate(hr, job, profile);
 
-    await newApplication.save();
+      // Fetch resume as stream from GridFS
+      const resumeStream = bucket.openDownloadStream(fileId);
 
-    // Prepare email template
-    const emailTemplate = newApplicationEmailTemplate(hr, job, profile);
+      // Send email with resume as attachment
+      const mailOptions = {
+          from: "aryan2k1.gupta@gmail.com",
+          to: hr.email,
+          subject: `New Application for Job ID: ${job.jobId}`,
+          html: emailTemplate,
+          attachments: [
+              {
+                  filename: "resume.pdf",
+                  content: resumeStream, // Stream resume directly from GridFS
+                  contentType: "application/pdf"
+              }
+          ]
+      };
 
-    // Send email to HR
-    const mailOptions = {
-      from: "your-email@example.com",
-      to: hr.email, // Dynamically fetched HR email
-      subject: `New Application for Job ID: ${job.jobId}`,
-      html: emailTemplate, // Use HTML email template
-      attachments: [
-        {
-          filename: "resume.pdf",
-          path: profile.resume, // Attach candidate's resume
-        },
-      ],
-    };
+      // Send email
+      transporter.sendMail(mailOptions, (err, info) => {
+          if (err) {
+              console.error("Error sending email:", err);
+              return res.status(500).json({ error: "Failed to send email to HR." });
+          }
+          console.log("Email sent to HR:", info.response);
+          res.status(201).json({
+              message: "Application submitted successfully, and HR notified.",
+              application: newApplication
+          });
+      });
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Email sent to HR:", info.response);
-
-    res.status(201).json({
-      message: "Application submitted successfully, and HR notified.",
-      application: newApplication,
-    });
   } catch (error) {
-    console.error("Error applying for job:", error.message);
-    res.status(500).json({
-      error: "Server error",
-      details: error.message,
-    });
+      console.error("Error applying for job:", error.message);
+      res.status(500).json({ error: "Server error", details: error.message });
   }
 };
 

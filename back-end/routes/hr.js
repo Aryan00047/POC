@@ -8,6 +8,8 @@ console.log("Hr routes accessed")
 // Route for posting a job (only if logged in and hrId is provided in the route)
 router.post('/postJob', protectRoute(['hr']), hrController.postJob);
 
+router.get("/fetchJobs", protectRoute(['hr']), hrController.fetchAvailableJobs);
+
 // Route for fetching all candidates (HR must be authenticated)
 router.get('/candidates', protectRoute(['hr']), hrController.fetchCandidates);
 

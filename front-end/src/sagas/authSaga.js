@@ -36,7 +36,7 @@ function* handleRegister(action) {
 
 function* handleLogin(action) {
   try {
-    const url = "/api/user/login";
+    const url = "http://localhost:5000/api/user/login";
     const method = "post";
     const formData = action.payload;
 

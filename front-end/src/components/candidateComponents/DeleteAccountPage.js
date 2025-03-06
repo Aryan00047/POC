@@ -1,47 +1,22 @@
 import React, { useState } from "react";
-import Api from "../reusableComponents/api";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { candidateActions } from "../../slices/candidateSlice";
 
 const DeleteAccountPage = () => {
-  const [loading, setLoading] = useState(false); 
-  const [error, setError] = useState(null); 
-  const [success, setSuccess] = useState(null); 
-  const url = "/api/candidate/profile";
-  const method = "delete";
+  const dispatch = useDispatch();
+  const navigate = useNavigate(); // Initialize navigate
+  const [loading] = useState(false);
+  const [error] = useState(null);
+  const [success] = useState(null);
 
-  const handleDeleteAccount = async () => {
+  const handleDeleteAccount = () => {
     const confirmation = window.confirm(
       "Are you sure you want to delete your account? This action cannot be undone."
     );
+    if (!confirmation) return;
 
-    if (!confirmation) {
-      return; // Exit if the user cancels
-    }
-
-    try {
-      setLoading(true); // Start loading
-      setError(null); // Clear previous errors
-      setSuccess(null); // Clear previous success messages
-
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setError("Please log in first.");
-        setLoading(false);
-        return;
-      }
-
-      // Make DELETE request to delete the account
-      const response = await Api({url, method, token});
-
-      setSuccess(response.data.message); // Display success message
-      localStorage.removeItem("token"); // Clear token from localStorage
-    } catch (err) {
-      console.error("Error deleting account:", err);
-      setError(
-        err.response?.data?.message || "Failed to delete account. Please try again."
-      );
-    } finally {
-      setLoading(false); // Stop loading
-    }
+    dispatch(candidateActions.candidateDeleteAccount({ navigate })); // Pass navigate to saga
   };
 
   return (
